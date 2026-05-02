@@ -135,6 +135,9 @@ export async function applyTransition({
       : scheduleNextReview(lesson, 1, now);
     patch.queue = sched.queue;
     patch.nextDueAt = sched.nextDueAt;
+    if (sched.fsrsState) {
+      patch.fsrsStateJson = sched.fsrsState;
+    }
   }
 
   // Persister les ratings reçus

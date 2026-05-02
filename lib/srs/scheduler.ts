@@ -10,13 +10,18 @@
  *                tableau du jour pour les continuer.
  *   - `sabqi`  : leçons fraîchement maîtrisées, à réviser sur les 7 prochains
  *                jours. Espacement progressif : J+1, J+2, J+4, J+7 → graduation.
- *   - `manzil` : leçons consolidées (ont passé sabqi). Révision rotative
- *                longue, par défaut 30 jours.
- *
- * v1 : intervalles fixes simples. v2 : injecter ts-fsrs dans la queue manzil
- * pour ajuster individuellement chaque leçon en fonction des ratings.
+ *   - `manzil` : leçons consolidées (ont passé sabqi). FSRS (free spaced
+ *                repetition scheduler) pilote l'intervalle individuel de
+ *                chaque leçon en fonction de son historique de ratings.
  */
 
+import {
+  createEmptyCard,
+  FSRS,
+  generatorParameters,
+  Rating as FsrsRating,
+  type Card,
+} from "ts-fsrs";
 import type { Lesson, Queue } from "@/lib/db/schema";
 
 // ──────────────────────────────────────────────────────────────
@@ -29,11 +34,18 @@ const SABQI_INTERVALS_DAYS = [1, 2, 4, 7] as const;
 /** Au-delà de ce nombre de jours depuis masteredAt, on graduate vers manzil. */
 const SABQI_GRADUATE_AFTER_DAYS = 7;
 
-/** Intervalle de révision par défaut dans manzil (v1 simple). */
+/** Plancher d'intervalle dans manzil — FSRS peut proposer des intervalles
+ *  très courts pour les premières répétitions, on assure qu'on garde la
+ *  philosophie "long terme" en posant une borne minimale. */
+const MANZIL_MIN_INTERVAL_DAYS = 15;
+
+/** Intervalle par défaut quand FSRS n'a pas encore d'historique. */
 const MANZIL_INTERVAL_DAYS = 30;
 
 /** Pénalité en jours si rating "hésité" : on rapproche la prochaine révision. */
 const HESITATED_BACKOFF_FACTOR = 0.5;
+
+const fsrs = new FSRS(generatorParameters({ enable_fuzz: true }));
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -55,7 +67,65 @@ export type ReviewSchedule = {
   nextDueAt: Date;
   /** Vrai si la leçon graduate de sabqi à manzil (ou y entre directement). */
   graduates: boolean;
+  /** État FSRS sérialisé à persister dans `lessons.fsrsStateJson`. Présent
+   *  uniquement quand on programme dans la queue manzil. */
+  fsrsState?: SerializedFsrsCard;
 };
+
+/**
+ * Forme JSON-friendly d'une `Card` ts-fsrs (les Date deviennent des ISO
+ * strings côté DB ; on les reconstruit en helper).
+ */
+export type SerializedFsrsCard = {
+  due: string;
+  stability: number;
+  difficulty: number;
+  elapsed_days: number;
+  scheduled_days: number;
+  learning_steps: number;
+  reps: number;
+  lapses: number;
+  state: number;
+  last_review?: string;
+};
+
+function serializeCard(card: Card): SerializedFsrsCard {
+  return {
+    due: card.due.toISOString(),
+    stability: card.stability,
+    difficulty: card.difficulty,
+    elapsed_days: card.elapsed_days,
+    scheduled_days: card.scheduled_days,
+    learning_steps: card.learning_steps,
+    reps: card.reps,
+    lapses: card.lapses,
+    state: card.state,
+    last_review: card.last_review ? card.last_review.toISOString() : undefined,
+  };
+}
+
+function deserializeCard(s: SerializedFsrsCard): Card {
+  return {
+    due: new Date(s.due),
+    stability: s.stability,
+    difficulty: s.difficulty,
+    elapsed_days: s.elapsed_days,
+    scheduled_days: s.scheduled_days,
+    learning_steps: s.learning_steps,
+    reps: s.reps,
+    lapses: s.lapses,
+    state: s.state,
+    last_review: s.last_review ? new Date(s.last_review) : undefined,
+  } as Card;
+}
+
+/** Mappe nos ratings (1=OK, 2=hésité) vers FSRS Rating (Good, Hard).
+ *  Le rating 3 (oublié) ne passe jamais ici — il déclenche reject_mastery
+ *  côté state machine, ce qui sort la leçon de manzil et la ramène en
+ *  apprentissage actif. */
+function toFsrsRating(rating: 1 | 2): FsrsRating {
+  return rating === 1 ? FsrsRating.Good : FsrsRating.Hard;
+}
 
 // ──────────────────────────────────────────────────────────────
 // Helpers de date
@@ -157,14 +227,16 @@ export function placeInSabqi(now: Date): ReviewSchedule {
  * Logique sabqi :
  *   - On regarde combien de jours depuis masteredAt, on choisit le prochain
  *     palier dans SABQI_INTERVALS_DAYS.
- *   - Si on dépasse SABQI_GRADUATE_AFTER_DAYS → graduate vers manzil.
+ *   - Si on dépasse SABQI_GRADUATE_AFTER_DAYS → graduate vers manzil (init FSRS).
  *
  * Logique manzil :
- *   - Intervalle fixe (v1). Hooks FSRS en v2.
+ *   - FSRS calcule l'intervalle à partir de la Card stockée
+ *     (`lesson.fsrsStateJson`). Plancher de MANZIL_MIN_INTERVAL_DAYS pour
+ *     éviter les intervalles trop courts au démarrage.
  *
  * Rating ajustement :
- *   - 1 (OK)      → intervalle normal
- *   - 2 (hésité)  → on raccourcit (HESITATED_BACKOFF_FACTOR)
+ *   - 1 (OK)      → FSRS Good
+ *   - 2 (hésité)  → FSRS Hard (intervalle plus court)
  *   - 3 (oublié)  → caller doit appeler reject_mastery, pas cette fonction
  */
 export function scheduleNextReview(
@@ -187,7 +259,8 @@ export function scheduleNextReview(
     lesson.queue === "manzil" ||
     daysSinceMastered >= SABQI_GRADUATE_AFTER_DAYS
   ) {
-    return scheduleManzil(rating, today, lesson.queue !== "manzil");
+    const prev = lesson.fsrsStateJson as SerializedFsrsCard | null | undefined;
+    return scheduleManzil(rating, today, lesson.queue !== "manzil", prev ?? null);
   }
 
   // Encore en sabqi : prochain palier
@@ -201,8 +274,8 @@ function scheduleSabqi(rating: Rating, today: Date, daysSinceMastered: number): 
   if (nextStep) {
     intervalDays = nextStep - daysSinceMastered;
   } else {
-    // Plus de palier dans sabqi → graduation
-    return scheduleManzil(rating, today, true);
+    // Plus de palier dans sabqi → graduation (init FSRS card)
+    return scheduleManzil(rating, today, true, null);
   }
 
   if (rating === 2) {
@@ -216,16 +289,47 @@ function scheduleSabqi(rating: Rating, today: Date, daysSinceMastered: number): 
   };
 }
 
-function scheduleManzil(rating: Rating, today: Date, justGraduated: boolean): ReviewSchedule {
-  let intervalDays = MANZIL_INTERVAL_DAYS;
-  if (rating === 2) {
-    intervalDays = Math.max(7, Math.round(intervalDays * HESITATED_BACKOFF_FACTOR));
+function scheduleManzil(
+  rating: Rating,
+  today: Date,
+  justGraduated: boolean,
+  prevState: SerializedFsrsCard | null,
+): ReviewSchedule {
+  // Première répétition manzil sans état FSRS : on impose l'intervalle par défaut
+  // et on initialise une Card vierge calée à cet intervalle.
+  if (!prevState) {
+    const intervalDays =
+      rating === 2
+        ? Math.max(MANZIL_MIN_INTERVAL_DAYS, Math.round(MANZIL_INTERVAL_DAYS * HESITATED_BACKOFF_FACTOR))
+        : MANZIL_INTERVAL_DAYS;
+    const nextDueAt = addDays(today, intervalDays);
+    const seedCard = createEmptyCard(today);
+    return {
+      queue: "manzil",
+      nextDueAt,
+      graduates: justGraduated,
+      fsrsState: serializeCard({ ...seedCard, due: nextDueAt }),
+    };
   }
+
+  const baseCard = deserializeCard(prevState);
+  const recordLog = fsrs.repeat(baseCard, today);
+  const nextCard =
+    rating === 1
+      ? recordLog[FsrsRating.Good].card
+      : recordLog[FsrsRating.Hard].card;
+
+  // Plancher d'intervalle pour rester cohérent avec la philosophie "long terme"
+  const proposedDue = nextCard.due;
+  const minDate = addDays(today, MANZIL_MIN_INTERVAL_DAYS);
+  const nextDueAt =
+    proposedDue.getTime() < minDate.getTime() ? minDate : proposedDue;
 
   return {
     queue: "manzil",
-    nextDueAt: addDays(today, intervalDays),
+    nextDueAt,
     graduates: justGraduated,
+    fsrsState: serializeCard({ ...nextCard, due: nextDueAt }),
   };
 }
 
@@ -237,5 +341,6 @@ export const __schedulerInternals = {
   SABQI_INTERVALS_DAYS,
   SABQI_GRADUATE_AFTER_DAYS,
   MANZIL_INTERVAL_DAYS,
+  MANZIL_MIN_INTERVAL_DAYS,
   HESITATED_BACKOFF_FACTOR,
 };
