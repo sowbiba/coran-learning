@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { PWAClient } from "@/components/storage-persistence";
 import { SyncStatus } from "@/components/sync-status";
+import { ThemeToggle } from "@/components/theme-toggle";
 import "./globals.css";
 
 const inter = Inter({
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <TooltipProvider delay={300}>
               {children}
               <Toaster richColors position="top-center" />
+              <ThemeToggle />
               <PWAClient />
               <SyncStatus />
             </TooltipProvider>
