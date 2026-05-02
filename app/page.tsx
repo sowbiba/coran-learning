@@ -20,7 +20,10 @@ export default async function Today() {
 
   const inProgress: Array<{ chunk: ChunkWithSurah; lesson: Lesson }> = [];
   const dueRevisions: Array<{ chunk: ChunkWithSurah; lesson: Lesson }> = [];
+  const masteredResting: Array<{ chunk: ChunkWithSurah; lesson: Lesson }> = [];
   const untouched: ChunkWithSurah[] = [];
+
+  const dueIds = new Set(queue.sabqi.concat(queue.manzil).map((l) => l.id));
 
   for (const c of sortChunksForDisplay(chunks)) {
     const l = lessonByChunk.get(c.id);
@@ -28,21 +31,23 @@ export default async function Today() {
       untouched.push(c);
       continue;
     }
-    const isMasteredButNotDue = l.state === "mastered" && !queue.sabqi.concat(queue.manzil).find((x) => x.id === l.id);
-    if (isMasteredButNotDue) {
-      // Mastered, on l'affiche dans une 4e section discrète (acquis)
-      // Pour ne pas surcharger /today on les groupe ensemble en bas
-      // (pas de section dédiée pour l'instant — visible dans untouched listing)
+    if (l.state === "mastered") {
+      if (dueIds.has(l.id)) {
+        dueRevisions.push({ chunk: c, lesson: l });
+      } else {
+        masteredResting.push({ chunk: c, lesson: l });
+      }
       continue;
     }
-    if (l.state === "mastered") {
-      dueRevisions.push({ chunk: c, lesson: l });
-    } else {
-      inProgress.push({ chunk: c, lesson: l });
-    }
+    inProgress.push({ chunk: c, lesson: l });
   }
 
-  const isEmpty = inProgress.length === 0 && dueRevisions.length === 0 && untouched.length === 0;
+  const totalMastered = masteredResting.length + dueRevisions.length;
+  const isEmpty =
+    inProgress.length === 0 &&
+    dueRevisions.length === 0 &&
+    untouched.length === 0 &&
+    masteredResting.length === 0;
 
   return (
     <div className="quiet">
@@ -53,6 +58,14 @@ export default async function Today() {
         <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
           {teacher.today.subtitle}
         </h1>
+        {totalMastered > 0 ? (
+          <p className="mt-3 text-sm text-muted-foreground">
+            {totalMastered} {totalMastered > 1 ? "leçons maîtrisées" : "leçon maîtrisée"}
+            {masteredResting.length > 0
+              ? ` · ${masteredResting.length} ${masteredResting.length > 1 ? "reviennent" : "revient"} en révision plus tard`
+              : ""}
+          </p>
+        ) : null}
       </header>
 
       {isEmpty ? <EmptyState /> : null}
@@ -103,6 +116,30 @@ export default async function Today() {
               />
             ))}
           </Section>
+        </>
+      ) : null}
+
+      {masteredResting.length > 0 ? (
+        <>
+          <Separator className="my-10" />
+          <details className="group">
+            <summary className="cursor-pointer text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground">
+              Leçons en repos ({masteredResting.length})
+            </summary>
+            <p className="mt-3 mb-4 text-xs text-muted-foreground">
+              Maîtrisées récemment. Le Professeur les ramènera en révision quand le moment sera venu.
+            </p>
+            <div className="grid gap-3">
+              {masteredResting.map(({ chunk, lesson }) => (
+                <ChunkCard
+                  key={chunk.id}
+                  chunk={chunk}
+                  lesson={lesson}
+                  primaryAction={{ label: "Réviser maintenant", href: `/recite/${chunk.id}` }}
+                />
+              ))}
+            </div>
+          </details>
         </>
       ) : null}
     </div>
