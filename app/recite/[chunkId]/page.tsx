@@ -5,6 +5,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { ReciteFlow } from "@/components/recite-flow";
 import { teacher } from "@/lib/copy/teacher";
 import { getChunkDetails } from "@/lib/content/quran";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { getOrCreateLesson, prepareLessonForRecitation } from "@/lib/lessons/repo";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,10 @@ export default async function RecitePage({
 
   const details = await getChunkDetails(id);
   if (!details) notFound();
+
+  const userId = await getCurrentUserId();
+  const initial = await getOrCreateLesson(userId, id);
+  const lesson = await prepareLessonForRecitation(initial);
 
   const { chunk, ayahs } = details;
 
@@ -43,7 +49,7 @@ export default async function RecitePage({
         </h1>
       </header>
 
-      <ReciteFlow chunkId={chunk.id} ayahs={ayahs} />
+      <ReciteFlow chunkId={chunk.id} lessonId={lesson.id} ayahs={ayahs} initialState={lesson.state} />
     </div>
   );
 }

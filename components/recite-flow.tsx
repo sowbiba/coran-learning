@@ -1,20 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { teacher } from "@/lib/copy/teacher";
 import type { ChunkAyah } from "@/lib/content/quran";
+import type { LessonState } from "@/lib/db/schema";
 
 type Rating = 1 | 2 | 3; // 1=OK, 2=hésité, 3=oublié
 
 type Props = {
   chunkId: number;
+  lessonId: string;
   ayahs: ChunkAyah[];
+  initialState: LessonState;
 };
 
 /**
@@ -27,9 +31,12 @@ type Props = {
  * Persistance DB : à brancher après Auth.js. Pour l'instant, les ratings
  * restent en mémoire de la session et le bouton final affiche un toast.
  */
-export function ReciteFlow({ chunkId, ayahs }: Props) {
+export function ReciteFlow({ chunkId, lessonId, ayahs, initialState }: Props) {
+  const router = useRouter();
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
   const [ratings, setRatings] = useState<Record<number, Rating>>({});
+  const [submitting, startTransition] = useTransition();
+  const [decision, setDecision] = useState<"pending" | "mastered" | "rejected">("pending");
 
   const ratedCount = Object.keys(ratings).length;
   const allRated = ratedCount === ayahs.length;
@@ -48,13 +55,44 @@ export function ReciteFlow({ chunkId, ayahs }: Props) {
     return counts;
   }, [ratings]);
 
+  async function ensureRecited() {
+    // Le serveur amène la leçon à `ready_to_recite` au chargement de la page,
+    // donc ici on n'a plus qu'à enregistrer la récitation.
+    await patchLesson(lessonId, {
+      action: "complete_recitation",
+      ratings: Object.entries(ratings).map(([ayahId, rating]) => ({
+        ayahId: Number(ayahId),
+        rating,
+      })),
+    });
+  }
+
   function onMastered() {
-    // TODO: PATCH /api/lessons/{lessonId} { action: "complete_recitation" } puis "master".
-    toast.success(teacher.recite.masteredFeedback);
+    startTransition(async () => {
+      try {
+        await ensureRecited();
+        await patchLesson(lessonId, { action: "master" });
+        setDecision("mastered");
+        toast.success(teacher.recite.masteredFeedback);
+        router.refresh();
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
+    });
   }
 
   function onNotMastered() {
-    toast(teacher.recite.notMasteredFeedback);
+    startTransition(async () => {
+      try {
+        await ensureRecited();
+        await patchLesson(lessonId, { action: "reject_mastery" });
+        setDecision("rejected");
+        toast(teacher.recite.notMasteredFeedback);
+        router.refresh();
+      } catch (err) {
+        toast.error((err as Error).message);
+      }
+    });
   }
 
   return (
@@ -143,27 +181,54 @@ export function ReciteFlow({ chunkId, ayahs }: Props) {
           )}
         </div>
 
-        {allRated ? (
+        {allRated && decision === "pending" ? (
           <div className="space-y-3">
             <p className="font-display text-xl">{teacher.recite.finalQuestion}</p>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={onMastered}>{teacher.recite.finalYes}</Button>
-              <Button variant="outline" onClick={onNotMastered}>
+              <Button onClick={onMastered} disabled={submitting}>
+                {submitting ? "..." : teacher.recite.finalYes}
+              </Button>
+              <Button variant="outline" onClick={onNotMastered} disabled={submitting}>
                 {teacher.recite.finalNo}
               </Button>
-              <Link
-                href={`/lesson/${chunkId}`}
-                className={buttonVariants({ variant: "ghost" })}
-              >
-                <ArrowRight className="size-4" />
-                <span className="ms-1">Retour à la leçon</span>
-              </Link>
             </div>
+          </div>
+        ) : null}
+
+        {decision !== "pending" ? (
+          <div className="space-y-3">
+            <p className="text-sm text-foreground/80">
+              {decision === "mastered"
+                ? teacher.recite.masteredFeedback
+                : teacher.recite.notMasteredFeedback}
+            </p>
+            <Link
+              href={`/lesson/${chunkId}`}
+              className={buttonVariants({ variant: "default" })}
+            >
+              <ArrowRight className="size-4" />
+              <span className="ms-1">Retour à la leçon</span>
+            </Link>
           </div>
         ) : null}
       </footer>
     </div>
   );
+}
+
+async function patchLesson(
+  lessonId: string,
+  body: { action: string; ratings?: { ayahId: number; rating: 1 | 2 | 3 }[] },
+): Promise<void> {
+  const res = await fetch(`/api/lessons/${lessonId}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error ?? `HTTP ${res.status}`);
+  }
 }
 
 function RatingButton({
