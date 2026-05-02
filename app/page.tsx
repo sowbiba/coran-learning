@@ -104,7 +104,7 @@ export default async function Today() {
         <>
           <Separator className="my-10" />
           <Section title="Leçons à découvrir">
-            {untouched.map((chunk, idx) => (
+            {untouched.slice(0, 6).map((chunk, idx) => (
               <ChunkCard
                 key={chunk.id}
                 chunk={chunk}
@@ -115,6 +115,14 @@ export default async function Today() {
                 }}
               />
             ))}
+            {untouched.length > 6 ? (
+              <Link
+                href="/catalogue"
+                className={`${buttonVariants({ variant: "ghost", size: "sm" })} mt-2 self-start text-muted-foreground hover:text-foreground`}
+              >
+                Parcourir le catalogue complet ({untouched.length} leçons disponibles) →
+              </Link>
+            ) : null}
           </Section>
         </>
       ) : null}
