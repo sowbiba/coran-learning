@@ -7,12 +7,14 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { teacher } from "@/lib/copy/teacher";
 import { VoiceRecorder } from "@/components/voice-recorder";
+import { NoteEditor } from "@/components/note-editor";
 import type { ChunkAyah } from "@/lib/content/quran";
 
 const SPEEDS = [0.75, 1, 1.25] as const;
 
 type Props = {
   ayahs: ChunkAyah[];
+  surahNameTranslit: string;
 };
 
 /**
@@ -26,7 +28,7 @@ type Props = {
  * Pas de mutation côté DB pour l'instant — l'auth viendra ensuite et on
  * câblera POST /api/recitations + PATCH /api/lessons.
  */
-export function PracticeFlow({ ayahs }: Props) {
+export function PracticeFlow({ ayahs, surahNameTranslit }: Props) {
   const [index, setIndex] = useState(0);
   const [showTranslit, setShowTranslit] = useState(true);
   const [showTranslation, setShowTranslation] = useState(true);
@@ -150,6 +152,12 @@ export function PracticeFlow({ ayahs }: Props) {
         {showTranslation && ayah.textFr ? (
           <p className="text-base leading-relaxed text-foreground/80">{ayah.textFr}</p>
         ) : null}
+
+        {ayah.noteBodyMd ? (
+          <blockquote className="border-s-2 border-foreground/30 ps-3 text-sm text-muted-foreground italic">
+            {ayah.noteBodyMd}
+          </blockquote>
+        ) : null}
       </article>
 
       <Separator />
@@ -196,6 +204,15 @@ export function PracticeFlow({ ayahs }: Props) {
                   {s}×
                 </button>
               ))}
+            </div>
+
+            <div className="ms-auto">
+              <NoteEditor
+                ayahId={ayah.id}
+                ayahNumberInSurah={ayah.numberInSurah}
+                surahNameTranslit={surahNameTranslit}
+                initialBody={ayah.noteBodyMd ?? ""}
+              />
             </div>
 
             <audio ref={audioRef} src={ayah.audioUrl} preload="none" />

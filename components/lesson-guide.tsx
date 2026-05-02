@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { AudioPlayer } from "@/components/audio-player";
+import { NoteEditor } from "@/components/note-editor";
 import { cn } from "@/lib/utils";
 import { teacher } from "@/lib/copy/teacher";
 import type { ChunkAyah } from "@/lib/content/quran";
@@ -65,6 +66,7 @@ type Props = {
   lessonId: string;
   ayahs: ChunkAyah[];
   initialState: LessonState;
+  surahNameTranslit: string;
 };
 
 /**
@@ -78,7 +80,7 @@ type Props = {
  * via PATCH /api/lessons/[id] et propose de continuer en pratique
  * autonome ou de venir réciter directement.
  */
-export function LessonGuide({ chunkId, lessonId, ayahs, initialState }: Props) {
+export function LessonGuide({ chunkId, lessonId, ayahs, initialState, surahNameTranslit }: Props) {
   const router = useRouter();
   const [stepIdx, setStepIdx] = useState(0);
   const [submitting, startTransition] = useTransition();
@@ -159,6 +161,7 @@ export function LessonGuide({ chunkId, lessonId, ayahs, initialState }: Props) {
             ayah={ayah}
             position={idx + 1}
             step={current}
+            surahNameTranslit={surahNameTranslit}
           />
         ))}
       </ol>
@@ -213,10 +216,12 @@ function GuideAyah({
   ayah,
   position,
   step,
+  surahNameTranslit,
 }: {
   ayah: ChunkAyah;
   position: number;
   step: StepCopy;
+  surahNameTranslit: string;
 }) {
   return (
     <article className="space-y-3 py-6">
@@ -224,9 +229,15 @@ function GuideAyah({
         <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           Verset {ayah.numberInSurah}
         </span>
-        {ayah.audioUrl ? (
-          <AudioPlayer src={ayah.audioUrl} label="Écouter" />
-        ) : null}
+        <div className="flex items-center gap-1">
+          <NoteEditor
+            ayahId={ayah.id}
+            ayahNumberInSurah={ayah.numberInSurah}
+            surahNameTranslit={surahNameTranslit}
+            initialBody={ayah.noteBodyMd ?? ""}
+          />
+          {ayah.audioUrl ? <AudioPlayer src={ayah.audioUrl} label="Écouter" /> : null}
+        </div>
       </header>
 
       {step.showArabic ? (
@@ -255,6 +266,12 @@ function GuideAyah({
 
       {step.showFr && ayah.textFr ? (
         <p className="text-base leading-relaxed text-foreground/80">{ayah.textFr}</p>
+      ) : null}
+
+      {ayah.noteBodyMd && step.showFr ? (
+        <blockquote className="mt-2 border-s-2 border-foreground/30 ps-3 text-sm text-muted-foreground italic">
+          {ayah.noteBodyMd}
+        </blockquote>
       ) : null}
     </article>
   );

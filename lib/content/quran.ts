@@ -20,6 +20,7 @@ import {
   type Chunk,
   type Surah,
 } from "@/lib/db/schema";
+import { listNotesForAyahs } from "@/lib/notes/repo";
 
 const TRANSLATION_SOURCE = "hamidullah_complexe_roi_fahd";
 const RECITER_DEFAULT = "husary_muallim_128";
@@ -79,6 +80,8 @@ export type ChunkAyah = {
   transliteration: { ar: string; latin: string }[] | null;
   /** URL audio Husary Muʿallim 128 kbps. */
   audioUrl: string | null;
+  /** Note libre de l'élève sur ce verset (markdown). null si pas de note. */
+  noteBodyMd: string | null;
 };
 
 export type ChunkDetails = {
@@ -86,7 +89,10 @@ export type ChunkDetails = {
   ayahs: ChunkAyah[];
 };
 
-export async function getChunkDetails(chunkId: number): Promise<ChunkDetails | null> {
+export async function getChunkDetails(
+  chunkId: number,
+  userId?: string,
+): Promise<ChunkDetails | null> {
   const chunkRows = await db
     .select({ chunk: chunksTable, surah: surahsTable })
     .from(chunksTable)
@@ -127,6 +133,13 @@ export async function getChunkDetails(chunkId: number): Promise<ChunkDetails | n
     .where(between(ayahsTable.id, chunk.firstAyahId, chunk.lastAyahId))
     .orderBy(asc(ayahsTable.id));
 
+  const notesByAyah = userId
+    ? await listNotesForAyahs(
+        userId,
+        ayahRows.map((r) => r.ayah.id),
+      )
+    : new Map<number, { bodyMd: string }>();
+
   const ayahs: ChunkAyah[] = ayahRows.map(({ ayah, translation, audio, translit }) => ({
     id: ayah.id,
     numberInSurah: ayah.numberInSurah,
@@ -138,6 +151,7 @@ export async function getChunkDetails(chunkId: number): Promise<ChunkDetails | n
     textFr: translation?.text ?? null,
     transliteration: translit?.wordsJson ?? null,
     audioUrl: audio?.url ?? null,
+    noteBodyMd: notesByAyah.get(ayah.id)?.bodyMd ?? null,
   }));
 
   return {

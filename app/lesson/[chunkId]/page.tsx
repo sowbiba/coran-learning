@@ -21,10 +21,10 @@ export default async function LessonPage({
   const id = Number.parseInt(chunkId, 10);
   if (!Number.isFinite(id)) notFound();
 
-  const details = await getChunkDetails(id);
+  const userId = await getCurrentUserId();
+  const details = await getChunkDetails(id, userId);
   if (!details) notFound();
 
-  const userId = await getCurrentUserId();
   const lesson = await getOrCreateLesson(userId, id);
 
   const { chunk, ayahs } = details;
@@ -65,6 +65,7 @@ export default async function LessonPage({
         lessonId={lesson.id}
         ayahs={ayahs}
         initialState={lesson.state}
+        surahNameTranslit={chunk.surahNameTranslit}
       />
     </div>
   );

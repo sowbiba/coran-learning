@@ -5,6 +5,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { PracticeFlow } from "@/components/practice-flow";
 import { teacher } from "@/lib/copy/teacher";
 import { getChunkDetails } from "@/lib/content/quran";
+import { getCurrentUserId } from "@/lib/auth/current-user";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,8 @@ export default async function PracticePage({
   const id = Number.parseInt(chunkId, 10);
   if (!Number.isFinite(id)) notFound();
 
-  const details = await getChunkDetails(id);
+  const userId = await getCurrentUserId();
+  const details = await getChunkDetails(id, userId);
   if (!details) notFound();
 
   const { chunk, ayahs } = details;
@@ -44,7 +46,7 @@ export default async function PracticePage({
         <p className="mt-1 text-sm text-muted-foreground">{teacher.practice.subtitle}</p>
       </header>
 
-      <PracticeFlow ayahs={ayahs} />
+      <PracticeFlow ayahs={ayahs} surahNameTranslit={chunk.surahNameTranslit} />
     </div>
   );
 }

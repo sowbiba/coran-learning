@@ -21,10 +21,10 @@ export default async function RecitePage({
   const id = Number.parseInt(chunkId, 10);
   if (!Number.isFinite(id)) notFound();
 
-  const details = await getChunkDetails(id);
+  const userId = await getCurrentUserId();
+  const details = await getChunkDetails(id, userId);
   if (!details) notFound();
 
-  const userId = await getCurrentUserId();
   const initial = await getOrCreateLesson(userId, id);
   const lesson = await prepareLessonForRecitation(initial);
 
