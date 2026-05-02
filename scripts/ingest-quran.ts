@@ -1,14 +1,24 @@
 /**
- * Ingestion one-shot du contenu coranique pour le v1 (Al-Fātiḥa + Juz' 30).
+ * Ingestion one-shot du contenu coranique.
  *
  * Sources :
  *  - alquran.cloud /v1/surah/{n}/quran-uthmani  → texte arabe + métadonnées
  *  - alquran.cloud /v1/surah/{n}/fr.hamidullah  → traduction française Hamidullah
- *  - everyayah.com/data/Husary_128kbps/{NNN}{AAA}.mp3 → audio (URL déterministe, pas de fetch)
+ *  - everyayah.com/data/Husary_128kbps/{NNN}{AAA}.mp3 → audio (URL déterministe)
  *
- * Idempotent : safe à re-runner. Utilise ON CONFLICT DO NOTHING là où possible.
+ * Découpage rukūʿ adaptatif :
+ *  - Pour chaque sourate, on regroupe les ayahs par valeur globale `ruku`
+ *  - 1 seul groupe → 1 chunk = sourate (kind="surah")
+ *  - Plusieurs groupes → 1 chunk par rukūʿ (kind="ruku") + insertion dans
+ *    la table `rukus` avec un numberInSurah local (1, 2, 3...)
  *
- * Usage : `npm run ingest:quran`
+ * Idempotent : safe à re-runner. Utilise ON CONFLICT DO NOTHING là où
+ * possible et vérifie l'existence avant les inserts qui n'ont pas de
+ * contrainte unique naturelle (rukus, chunks).
+ *
+ * Usage :
+ *   `npm run ingest:quran`        → ingère ALL_SURAHS (114) — long (~5 min)
+ *   `INGEST_SCOPE=v1 npm run ingest:quran` → uniquement V1_SURAHS (38)
  */
 
 import { eq, and } from "drizzle-orm";
@@ -17,10 +27,11 @@ import {
   ayahs,
   audioFiles,
   chunks,
+  rukus,
   surahs,
   translations,
 } from "@/lib/db/schema";
-import { SURAH_META, V1_SURAHS } from "@/lib/content/surah-meta";
+import { ALL_SURAHS, SURAH_META, V1_SURAHS } from "@/lib/content/surah-meta";
 
 const ALQURAN_BASE = "https://api.alquran.cloud/v1";
 const TRANSLATION_SOURCE = "hamidullah_complexe_roi_fahd";
@@ -32,7 +43,7 @@ type AyahJson = {
   numberInSurah: number;
   juz: number;
   page: number;
-  ruku: number;
+  ruku: number; // global ruku id 1..540
   hizbQuarter: number;
   sajda: boolean | { recommended?: boolean; obligatory?: boolean };
 };
@@ -49,13 +60,9 @@ type SurahJson = {
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Fetch failed (${res.status}) for ${url}`);
-  }
+  if (!res.ok) throw new Error(`Fetch failed (${res.status}) for ${url}`);
   const data = (await res.json()) as { code: number; status: string; data: T };
-  if (data.code !== 200) {
-    throw new Error(`API returned non-200 for ${url}: ${data.status}`);
-  }
+  if (data.code !== 200) throw new Error(`API non-200 for ${url}: ${data.status}`);
   return data.data;
 }
 
@@ -65,6 +72,42 @@ function pad3(n: number): string {
 
 function audioUrlFor(surah: number, ayah: number): string {
   return `https://everyayah.com/data/Husary_128kbps/${pad3(surah)}${pad3(ayah)}.mp3`;
+}
+
+/**
+ * Regroupe les ayahs d'une sourate par valeur globale `ruku`.
+ * Renvoie un array de groupes en ordre, chaque groupe contenant :
+ *  - numberInSurah local (1..N)
+ *  - les ayahs du groupe (firstAyah, lastAyah, ayahCount)
+ */
+type RukuGroup = {
+  numberInSurah: number;
+  globalRuku: number;
+  firstAyahId: number;
+  lastAyahId: number;
+  ayahCount: number;
+};
+
+function groupByRuku(ayahsArr: AyahJson[]): RukuGroup[] {
+  const groups: RukuGroup[] = [];
+  let current: RukuGroup | null = null;
+  for (const a of ayahsArr) {
+    if (!current || a.ruku !== current.globalRuku) {
+      if (current) groups.push(current);
+      current = {
+        numberInSurah: groups.length + 1,
+        globalRuku: a.ruku,
+        firstAyahId: a.number,
+        lastAyahId: a.number,
+        ayahCount: 1,
+      };
+    } else {
+      current.lastAyahId = a.number;
+      current.ayahCount += 1;
+    }
+  }
+  if (current) groups.push(current);
+  return groups;
 }
 
 async function ingestSurah(n: number) {
@@ -82,7 +125,7 @@ async function ingestSurah(n: number) {
     );
   }
 
-  // 1. Surah row (idempotent via ON CONFLICT DO NOTHING)
+  // 1. Surah row
   await db
     .insert(surahs)
     .values({
@@ -95,7 +138,16 @@ async function ingestSurah(n: number) {
     })
     .onConflictDoNothing();
 
-  // 2. Ayahs + translations + audio (per-row, all idempotent)
+  // FK ordering :
+  //   ayahs.rukuId      → rukus.id   (no FK constraint, just an int)
+  //   rukus.firstAyahId → ayahs.id   (FK enforced)
+  //   rukus.lastAyahId  → ayahs.id   (FK enforced)
+  //   chunks.firstAyah  → ayahs.id   (FK)
+  //   chunks.rukuId     → rukus.id   (FK)
+  //
+  // Donc l'ordre obligatoire : ayahs → rukus → chunks.
+
+  // 2. Ayahs + translations + audio (avant rukus, pour satisfaire la FK)
   for (let i = 0; i < ar.ayahs.length; i++) {
     const ayahAr = ar.ayahs[i]!;
     const ayahFr = fr.ayahs[i]!;
@@ -110,8 +162,8 @@ async function ingestSurah(n: number) {
         textImlaei: null,
         juz: ayahAr.juz,
         page: ayahAr.page,
-        hizb: Math.ceil(ayahAr.hizbQuarter / 4), // 1..60
-        rukuId: null, // v2 : on remplit la table rukus quand on ingère les longues sourates
+        hizb: Math.ceil(ayahAr.hizbQuarter / 4),
+        rukuId: ayahAr.ruku, // global ruku id (pas de FK enforcée côté ayahs)
       })
       .onConflictDoNothing();
 
@@ -136,45 +188,93 @@ async function ingestSurah(n: number) {
       .onConflictDoNothing();
   }
 
-  // 3. Chunk (1 par sourate pour v1 puisque le juz' 30 est court)
-  const firstAyahId = ar.ayahs[0]!.number;
-  const lastAyahId = ar.ayahs[ar.ayahs.length - 1]!.number;
-
-  const existingChunk = await db
-    .select({ id: chunks.id })
-    .from(chunks)
-    .where(and(eq(chunks.surahId, n), eq(chunks.kind, "surah")))
-    .limit(1);
-
-  if (existingChunk.length === 0) {
-    await db.insert(chunks).values({
-      kind: "surah",
-      surahId: n,
-      rukuId: null,
-      label: meta.name_translit,
-      orderIndex: n * 1000, // espace pour insérer des rukūʿ entre sourates en v2
-      firstAyahId,
-      lastAyahId,
-      ayahCount: ar.numberOfAyahs,
-    });
+  // 3. Rukus (les FK firstAyahId / lastAyahId pointent vers les ayahs
+  //    qu'on vient de créer)
+  const groups = groupByRuku(ar.ayahs);
+  for (const g of groups) {
+    await db
+      .insert(rukus)
+      .values({
+        id: g.globalRuku,
+        surahId: n,
+        numberInSurah: g.numberInSurah,
+        firstAyahId: g.firstAyahId,
+        lastAyahId: g.lastAyahId,
+        ayahCount: g.ayahCount,
+      })
+      .onConflictDoNothing();
   }
 
-  return { surah: n, ayahCount: ar.numberOfAyahs, period: ar.revelationType };
+  // 4. Chunks — adaptive: 1 chunk = surah if single ruku group, else 1 per ruku
+  const isMultiRuku = groups.length > 1;
+
+  if (!isMultiRuku) {
+    // Single chunk for the whole surah
+    const existing = await db
+      .select({ id: chunks.id })
+      .from(chunks)
+      .where(and(eq(chunks.surahId, n), eq(chunks.kind, "surah")))
+      .limit(1);
+    if (existing.length === 0) {
+      await db.insert(chunks).values({
+        kind: "surah",
+        surahId: n,
+        rukuId: null,
+        label: meta.name_translit,
+        orderIndex: n * 1000,
+        firstAyahId: ar.ayahs[0]!.number,
+        lastAyahId: ar.ayahs[ar.ayahs.length - 1]!.number,
+        ayahCount: ar.numberOfAyahs,
+      });
+    }
+  } else {
+    // One chunk per ruku
+    for (const g of groups) {
+      const existing = await db
+        .select({ id: chunks.id })
+        .from(chunks)
+        .where(and(eq(chunks.surahId, n), eq(chunks.rukuId, g.globalRuku)))
+        .limit(1);
+      if (existing.length === 0) {
+        await db.insert(chunks).values({
+          kind: "ruku",
+          surahId: n,
+          rukuId: g.globalRuku,
+          label: `${meta.name_translit} — rukūʿ ${g.numberInSurah}/${groups.length}`,
+          orderIndex: n * 1000 + g.numberInSurah,
+          firstAyahId: g.firstAyahId,
+          lastAyahId: g.lastAyahId,
+          ayahCount: g.ayahCount,
+        });
+      }
+    }
+  }
+
+  return { surah: n, ayahCount: ar.numberOfAyahs, chunkCount: isMultiRuku ? groups.length : 1 };
 }
 
 async function main() {
+  const scope = process.env.INGEST_SCOPE === "v1" ? V1_SURAHS : ALL_SURAHS;
   const start = Date.now();
-  console.log(`Ingestion v1 — ${V1_SURAHS.length} sourates (Al-Fātiḥa + Juz' 30)`);
-  console.log(`Source contenu : alquran.cloud · Audio : everyayah Husary 128kbps\n`);
+  console.log(
+    `Ingestion ${scope === V1_SURAHS ? "v1 (juz' 30)" : "complète (114 sourates)"} — ${scope.length} sourates\n`,
+  );
 
   let totalAyahs = 0;
-  for (const n of V1_SURAHS) {
+  let totalChunks = 0;
+
+  for (const n of scope) {
     const meta = SURAH_META[n];
-    process.stdout.write(`  · Sourate ${n.toString().padStart(3)} ${meta.name_translit.padEnd(20)} ... `);
+    process.stdout.write(
+      `  · Sourate ${n.toString().padStart(3)} ${meta.name_translit.padEnd(22)} ... `,
+    );
     try {
-      const { ayahCount } = await ingestSurah(n);
+      const { ayahCount, chunkCount } = await ingestSurah(n);
       totalAyahs += ayahCount;
-      console.log(`✓ ${ayahCount} ayahs`);
+      totalChunks += chunkCount;
+      console.log(
+        `✓ ${ayahCount} ayahs · ${chunkCount} chunk${chunkCount > 1 ? "s" : ""}`,
+      );
     } catch (err) {
       console.log(`✗ ${(err as Error).message}`);
       throw err;
@@ -183,7 +283,7 @@ async function main() {
 
   const duration = ((Date.now() - start) / 1000).toFixed(1);
   console.log(
-    `\n✓ Terminé en ${duration}s : ${V1_SURAHS.length} sourates, ${totalAyahs} ayahs.`,
+    `\n✓ Terminé en ${duration}s : ${scope.length} sourates, ${totalAyahs} ayahs, ${totalChunks} chunks.`,
   );
 }
 
