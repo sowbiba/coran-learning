@@ -8,15 +8,22 @@
  *   <span color="blue">*<translit latine en italique>*</span>
  *   <span color="brown"><traduction française></span>
  *
- * Tolérant aux blocs incomplets (verset sans translit, etc.) — on
- * skip silencieusement.
+ * Tolère :
+ *  - le contenu décodé (newlines réels, guillemets normaux)
+ *  - le contenu JSON-encoded (`\n` littéraux, `\"` littéraux) — utile
+ *    quand on sauvegarde le résultat brut du MCP sans le déserialiser
+ *  - les blocs incomplets (verset sans translit) — silencieusement skip
  */
 
 export type ParsedVerse = { numberInSurah: number; translit: string };
 
 export function parseNotionSurahPage(raw: string): ParsedVerse[] {
+  // Normalise : si le contenu vient d'un export JSON brut, on remet les
+  // newlines et guillemets dans leur forme réelle.
+  const normalized = raw.replace(/\\"/g, '"').replace(/\\n/g, "\n");
+
   const verses: ParsedVerse[] = [];
-  const blocks = raw.split(/^---\s*$/m);
+  const blocks = normalized.split(/^\s*-{3,}\s*$/m);
 
   for (const block of blocks) {
     const versetMatch = block.match(/Verset\s+(\d+)/);

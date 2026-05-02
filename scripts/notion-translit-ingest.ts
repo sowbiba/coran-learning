@@ -30,9 +30,16 @@ import {
 import { parseNotionSurahPage } from "@/lib/content/notion-translit-parser";
 
 async function main() {
-  const filePath = path.resolve(process.cwd(), "data/notion-pages.json");
-  const raw = await fs.readFile(filePath, "utf-8");
-  const data: Record<string, string> = JSON.parse(raw);
+  // Lit toutes les pages Notion sauvegardées dans data/notion-pages/{N}.txt
+  const dir = path.resolve(process.cwd(), "data/notion-pages");
+  const files = await fs.readdir(dir);
+  const data: Record<string, string> = {};
+  for (const f of files) {
+    if (!f.endsWith(".txt")) continue;
+    const surahId = path.basename(f, ".txt");
+    if (!/^\d+$/.test(surahId)) continue;
+    data[surahId] = await fs.readFile(path.join(dir, f), "utf-8");
+  }
 
   let inserted = 0;
   let updated = 0;
