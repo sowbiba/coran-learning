@@ -5,6 +5,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { PWAClient } from "@/components/storage-persistence";
+import { SyncStatus } from "@/components/sync-status";
 import "./globals.css";
 
 const inter = Inter({
@@ -49,6 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
               <Toaster richColors position="top-center" />
               <PWAClient />
+              <SyncStatus />
             </TooltipProvider>
           </QueryProvider>
         </ThemeProvider>

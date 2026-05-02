@@ -260,17 +260,15 @@ function GuideAyah({
   );
 }
 
+import { sendOrEnqueue } from "@/lib/sync/outbox";
+
 async function patchLesson(
   lessonId: string,
   body: { action: string },
 ): Promise<void> {
-  const res = await fetch(`/api/lessons/${lessonId}`, {
+  await sendOrEnqueue({
+    url: `/api/lessons/${lessonId}`,
     method: "PATCH",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
+    body,
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error ?? `HTTP ${res.status}`);
-  }
 }
