@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play, Repeat } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { teacher } from "@/lib/copy/teacher";
+import { VoiceRecorder } from "@/components/voice-recorder";
 import type { ChunkAyah } from "@/lib/content/quran";
 
 const SPEEDS = [0.75, 1, 1.25] as const;
@@ -217,6 +218,20 @@ export function PracticeFlow({ ayahs }: Props) {
           label="Traduction"
         />
       </div>
+
+      <Separator />
+
+      {/* Enregistrement vocal pour ce verset */}
+      <section className="space-y-2">
+        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+          Enregistrement
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Enregistre-toi en récitant, puis ré-écoute-toi pour t'auto-corriger.
+          Reste local, sur cet appareil uniquement.
+        </p>
+        <VoiceRecorder ayahId={ayah.id} />
+      </section>
 
       <Separator />
 
