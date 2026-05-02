@@ -1,0 +1,9 @@
+### <span color="purple">**Verset 1**</span>
+<span color="blue">*Innaa a'taina kal kauthar*</span>
+---
+### <span color="purple">**Verset 2**</span>
+<span color="blue">*Fa salli li rabbika wanhar*</span>
+---
+### <span color="purple">**Verset 3**</span>
+<span color="blue">*Inna shani-aka huwal abtar*</span>
+---

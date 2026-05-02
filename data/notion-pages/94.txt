@@ -1,0 +1,24 @@
+### <span color="purple">**Verset 1**</span>
+<span color="blue">*Alam nashrah laka sadrak*</span>
+---
+### <span color="purple">**Verset 2**</span>
+<span color="blue">*Wa wa d'ana 'anka wizrak*</span>
+---
+### <span color="purple">**Verset 3**</span>
+<span color="blue">*Allazee anqada zahrak*</span>
+---
+### <span color="purple">**Verset 4**</span>
+<span color="blue">*Wa raf 'ana laka zikrak*</span>
+---
+### <span color="purple">**Verset 5**</span>
+<span color="blue">*Fa inna ma'al usri yusra*</span>
+---
+### <span color="purple">**Verset 6**</span>
+<span color="blue">*Inna ma'al 'usri yusra*</span>
+---
+### <span color="purple">**Verset 7**</span>
+<span color="blue">*Fa iza faragh ta fansab*</span>
+---
+### <span color="purple">**Verset 8**</span>
+<span color="blue">*Wa ilaa rabbika far ghab*</span>
+---

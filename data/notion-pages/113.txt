@@ -1,0 +1,15 @@
+### <span color="purple">**Verset 1**</span>
+<span color="blue">*Qul a'uzoo bi rabbil-falaq*</span>
+---
+### <span color="purple">**Verset 2**</span>
+<span color="blue">*Min sharri ma khalaq*</span>
+---
+### <span color="purple">**Verset 3**</span>
+<span color="blue">*Wa min sharri ghasiqin iza waqab*</span>
+---
+### <span color="purple">**Verset 4**</span>
+<span color="blue">*Wa min sharrin-naffaa-thaati fil 'uqad*</span>
+---
+### <span color="purple">**Verset 5**</span>
+<span color="blue">*Wa min shar ri haasidin iza hasad*</span>
+---

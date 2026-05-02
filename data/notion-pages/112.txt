@@ -1,0 +1,12 @@
+### <span color="purple">**Verset 1**</span>
+<span color="blue">*Qul huwal laahu ahad*</span>
+---
+### <span color="purple">**Verset 2**</span>
+<span color="blue">*Allah hus-samad*</span>
+---
+### <span color="purple">**Verset 3**</span>
+<span color="blue">*Lam yalid wa lam yoolad*</span>
+---
+### <span color="purple">**Verset 4**</span>
+<span color="blue">*Wa lam yakul-lahu kufuwan ahad*</span>
+---
