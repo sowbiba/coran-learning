@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { ReciteFlow } from "@/components/recite-flow";
 import { teacher } from "@/lib/copy/teacher";
+import { getChunkDetails } from "@/lib/content/quran";
+
+export const dynamic = "force-dynamic";
 
 type RouteParams = { chunkId: string };
 
@@ -11,10 +16,18 @@ export default async function RecitePage({
   params: Promise<RouteParams>;
 }) {
   const { chunkId } = await params;
+  const id = Number.parseInt(chunkId, 10);
+  if (!Number.isFinite(id)) notFound();
+
+  const details = await getChunkDetails(id);
+  if (!details) notFound();
+
+  const { chunk, ayahs } = details;
+
   return (
     <div className="quiet">
       <Link
-        href={`/lesson/${chunkId}`}
+        href={`/lesson/${chunk.id}`}
         className={`${buttonVariants({ variant: "ghost", size: "sm" })} mb-6 -ms-2 text-muted-foreground hover:text-foreground`}
       >
         <ArrowLeft className="me-1 size-4" />
@@ -26,15 +39,11 @@ export default async function RecitePage({
           {teacher.recite.title}
         </p>
         <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
-          {teacher.recite.subtitle}
+          {chunk.surahNameTranslit}
         </h1>
       </header>
 
-      <p className="rounded-lg border border-dashed border-border/60 bg-card/40 p-6 text-sm text-muted-foreground">
-        Page en construction. Prochaine étape : texte arabe masqué par défaut,
-        révélation verset par verset, rating bref par verset, décision finale
-        « maîtrisée ? » qui transitionne l'état de la leçon.
-      </p>
+      <ReciteFlow chunkId={chunk.id} ayahs={ayahs} />
     </div>
   );
 }

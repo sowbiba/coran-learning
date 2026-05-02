@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { PracticeFlow } from "@/components/practice-flow";
 import { teacher } from "@/lib/copy/teacher";
+import { getChunkDetails } from "@/lib/content/quran";
+
+export const dynamic = "force-dynamic";
 
 type RouteParams = { chunkId: string };
 
@@ -11,30 +16,35 @@ export default async function PracticePage({
   params: Promise<RouteParams>;
 }) {
   const { chunkId } = await params;
+  const id = Number.parseInt(chunkId, 10);
+  if (!Number.isFinite(id)) notFound();
+
+  const details = await getChunkDetails(id);
+  if (!details) notFound();
+
+  const { chunk, ayahs } = details;
+
   return (
     <div className="quiet">
       <Link
-        href={`/lesson/${chunkId}`}
+        href={`/lesson/${chunk.id}`}
         className={`${buttonVariants({ variant: "ghost", size: "sm" })} mb-6 -ms-2 text-muted-foreground hover:text-foreground`}
       >
         <ArrowLeft className="me-1 size-4" />
         Retour à la leçon
       </Link>
 
-      <header className="mb-6">
+      <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           {teacher.practice.title}
         </p>
         <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
-          {teacher.practice.subtitle}
+          {chunk.surahNameTranslit}
         </h1>
+        <p className="mt-1 text-sm text-muted-foreground">{teacher.practice.subtitle}</p>
       </header>
 
-      <p className="rounded-lg border border-dashed border-border/60 bg-card/40 p-6 text-sm text-muted-foreground">
-        Page en construction. Prochaine étape de l'implémentation : audio en boucle
-        par verset, vitesse réglable, masquer la translittération à la demande,
-        prendre une note. Pour l'instant, retourne à la leçon.
-      </p>
+      <PracticeFlow ayahs={ayahs} />
     </div>
   );
 }
