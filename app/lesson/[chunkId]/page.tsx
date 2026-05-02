@@ -2,10 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { AyahRow } from "@/components/ayah-row";
+import { LessonGuide } from "@/components/lesson-guide";
 import { teacher } from "@/lib/copy/teacher";
 import { getChunkDetails } from "@/lib/content/quran";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { getOrCreateLesson } from "@/lib/lessons/repo";
 
 export const dynamic = "force-dynamic";
 
@@ -23,8 +24,10 @@ export default async function LessonPage({
   const details = await getChunkDetails(id);
   if (!details) notFound();
 
+  const userId = await getCurrentUserId();
+  const lesson = await getOrCreateLesson(userId, id);
+
   const { chunk, ayahs } = details;
-  const isFatiha = chunk.surahId === 1;
   const periodLabel = chunk.surahPeriod === "meccan" ? "Mecquoise" : "Médinoise";
 
   return (
@@ -37,7 +40,7 @@ export default async function LessonPage({
         Retour au tableau du jour
       </Link>
 
-      <header className="mb-2">
+      <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
           {teacher.lesson.title}
         </p>
@@ -47,47 +50,22 @@ export default async function LessonPage({
         <p className="mt-1 text-sm text-muted-foreground">
           {chunk.surahNameFr} · Sourate {chunk.surahId} · {chunk.ayahCount} versets · {periodLabel}
         </p>
+        <p
+          lang="ar"
+          dir="rtl"
+          className="arabic mt-4 text-2xl leading-loose text-muted-foreground/80"
+          aria-hidden
+        >
+          {chunk.surahNameAr}
+        </p>
       </header>
 
-      <p
-        lang="ar"
-        dir="rtl"
-        className="arabic mt-4 text-2xl leading-loose text-muted-foreground/80"
-        aria-hidden
-      >
-        {chunk.surahNameAr}
-      </p>
-
-      <Separator className="my-8" />
-
-      <section className="space-y-1 divide-y divide-border/40">
-        {ayahs.map((ayah, idx) => (
-          <AyahRow
-            key={ayah.id}
-            ayah={ayah}
-            isBasmala={isFatiha && idx === 0}
-          />
-        ))}
-      </section>
-
-      <Separator className="my-10" />
-
-      <footer className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          {teacher.lesson.actionDoneHint}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Link href={`/practice/${chunk.id}`} className={buttonVariants()}>
-            {teacher.practice.title}
-          </Link>
-          <Link
-            href={`/recite/${chunk.id}`}
-            className={buttonVariants({ variant: "outline" })}
-          >
-            {teacher.practice.actionReadyToRecite}
-          </Link>
-        </div>
-      </footer>
+      <LessonGuide
+        chunkId={chunk.id}
+        lessonId={lesson.id}
+        ayahs={ayahs}
+        initialState={lesson.state}
+      />
     </div>
   );
 }
