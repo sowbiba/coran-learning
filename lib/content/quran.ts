@@ -7,7 +7,7 @@
  */
 
 import "server-only";
-import { and, asc, between, desc, eq } from "drizzle-orm";
+import { and, asc, between, desc, eq, gt, lt } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import {
   ayahs as ayahsTable,
@@ -177,6 +177,63 @@ export async function getSurah(id: number): Promise<Surah | null> {
     .where(eq(surahsTable.id, id))
     .limit(1);
   return rows[0] ?? null;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Navigation entre chunks (prev / next dans l'ordre du muṣḥaf)
+// ──────────────────────────────────────────────────────────────
+
+export type ChunkNavLink = {
+  id: number;
+  label: string;
+  surahNameTranslit: string;
+};
+
+/**
+ * Trouve le chunk précédent et suivant dans l'ordre `orderIndex`. Utilisé
+ * pour la navigation prev/next sur /lesson, /practice, /recite.
+ */
+export async function getAdjacentChunks(
+  currentChunkId: number,
+): Promise<{ prev: ChunkNavLink | null; next: ChunkNavLink | null }> {
+  const current = await db
+    .select({ orderIndex: chunksTable.orderIndex })
+    .from(chunksTable)
+    .where(eq(chunksTable.id, currentChunkId))
+    .limit(1);
+
+  if (current.length === 0) return { prev: null, next: null };
+  const order = current[0]!.orderIndex;
+
+  const [prev, next] = await Promise.all([
+    db
+      .select({
+        id: chunksTable.id,
+        label: chunksTable.label,
+        surahNameTranslit: surahsTable.nameTranslit,
+      })
+      .from(chunksTable)
+      .innerJoin(surahsTable, eq(chunksTable.surahId, surahsTable.id))
+      .where(lt(chunksTable.orderIndex, order))
+      .orderBy(desc(chunksTable.orderIndex))
+      .limit(1),
+    db
+      .select({
+        id: chunksTable.id,
+        label: chunksTable.label,
+        surahNameTranslit: surahsTable.nameTranslit,
+      })
+      .from(chunksTable)
+      .innerJoin(surahsTable, eq(chunksTable.surahId, surahsTable.id))
+      .where(gt(chunksTable.orderIndex, order))
+      .orderBy(asc(chunksTable.orderIndex))
+      .limit(1),
+  ]);
+
+  return {
+    prev: prev[0] ?? null,
+    next: next[0] ?? null,
+  };
 }
 
 // ──────────────────────────────────────────────────────────────

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { asc, eq, between } from "drizzle-orm";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { asc, eq } from "drizzle-orm";
 import { buttonVariants } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { CatalogueList, type CatalogueChunk } from "@/components/catalogue-list";
 import { db } from "@/lib/db/client";
 import {
   ayahs as ayahsTable,
@@ -13,24 +12,12 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type CatalogueChunk = {
-  id: number;
-  label: string;
-  ayahCount: number;
-  surahId: number;
-  surahNameTranslit: string;
-  surahNameFr: string;
-  juz: number;
-};
-
 /**
  * Catalogue complet du Coran : 30 sections (juz') listant tous les
  * chunks (sourate ou rukūʿ). Grouping par juz' = vue mushaf naturelle
- * pour explorer/repérer une leçon à étudier.
+ * pour explorer/repérer une leçon à étudier. Avec recherche live.
  */
 export default async function Catalogue() {
-  // Pour chaque chunk, on prend le juz' du 1er ayah (un chunk = 1 surah ou
-  // 1 rukūʿ et tient typiquement dans un seul juz').
   const rows = await db
     .select({
       chunk: chunksTable,
@@ -42,23 +29,15 @@ export default async function Catalogue() {
     .innerJoin(ayahsTable, eq(ayahsTable.id, chunksTable.firstAyahId))
     .orderBy(asc(chunksTable.orderIndex));
 
-  // Group by juz'
-  const byJuz = new Map<number, CatalogueChunk[]>();
-  for (const { chunk, surah, firstJuz } of rows) {
-    const list = byJuz.get(firstJuz) ?? [];
-    list.push({
-      id: chunk.id,
-      label: chunk.label,
-      ayahCount: chunk.ayahCount,
-      surahId: chunk.surahId,
-      surahNameTranslit: surah.nameTranslit,
-      surahNameFr: surah.nameFr,
-      juz: firstJuz,
-    });
-    byJuz.set(firstJuz, list);
-  }
-
-  const juzList = Array.from(byJuz.keys()).sort((a, b) => a - b);
+  const chunks: CatalogueChunk[] = rows.map(({ chunk, surah, firstJuz }) => ({
+    id: chunk.id,
+    label: chunk.label,
+    ayahCount: chunk.ayahCount,
+    surahId: chunk.surahId,
+    surahNameTranslit: surah.nameTranslit,
+    surahNameFr: surah.nameFr,
+    juz: firstJuz,
+  }));
 
   return (
     <div className="quiet">
@@ -75,73 +54,16 @@ export default async function Catalogue() {
           Catalogue
         </p>
         <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
-          Tout le Coran, en {rows.length} leçons
+          Tout le Coran, en {chunks.length} leçons
         </h1>
         <p className="mt-3 text-sm text-muted-foreground">
           Les sourates courtes sont une leçon ; les sourates longues sont
-          découpées en rukūʿ (unités thématiques d'~8-12 versets). Choisis
-          par où commencer.
+          découpées en rukūʿ (unités thématiques d'~8-12 versets). Cherche
+          une sourate ou parcours par juzʾ.
         </p>
       </header>
 
-      <nav className="mb-10 flex flex-wrap gap-1.5 text-xs">
-        {juzList.map((j) => (
-          <a
-            key={j}
-            href={`#juz-${j}`}
-            className="rounded-md border border-border/60 px-2 py-1 text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
-          >
-            Juz' {j}
-          </a>
-        ))}
-      </nav>
-
-      <div className="space-y-12">
-        {juzList.map((juz) => (
-          <JuzSection key={juz} juz={juz} chunks={byJuz.get(juz) ?? []} />
-        ))}
-      </div>
+      <CatalogueList chunks={chunks} />
     </div>
-  );
-}
-
-function JuzSection({ juz, chunks }: { juz: number; chunks: CatalogueChunk[] }) {
-  return (
-    <section id={`juz-${juz}`} className="scroll-mt-8">
-      <header className="mb-4">
-        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground">
-          Juzʾ {juz}
-        </p>
-        <h2 className="mt-1 font-display text-2xl tracking-tight">
-          {chunks.length} leçon{chunks.length > 1 ? "s" : ""}
-        </h2>
-      </header>
-      <div className="grid gap-3">
-        {chunks.map((c) => (
-          <Card key={c.id}>
-            <CardHeader className="space-y-1">
-              <div className="flex items-baseline justify-between gap-3">
-                <h3 className="font-display text-xl tracking-tight">{c.label}</h3>
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  Sourate {c.surahId}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {c.surahNameFr} · {c.ayahCount} versets
-              </p>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href={`/lesson/${c.id}`}
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-              >
-                Avec le Professeur
-              </Link>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      <Separator className="mt-12" />
-    </section>
   );
 }

@@ -4,7 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { LessonGuide } from "@/components/lesson-guide";
 import { teacher } from "@/lib/copy/teacher";
-import { getChunkDetails } from "@/lib/content/quran";
+import { ChevronLeft as ChevLeft, ChevronRight as ChevRight } from "lucide-react";
+import { getAdjacentChunks, getChunkDetails } from "@/lib/content/quran";
 import { getCurrentUserId } from "@/lib/auth/current-user";
 import { getOrCreateLesson } from "@/lib/lessons/repo";
 
@@ -22,7 +23,10 @@ export default async function LessonPage({
   if (!Number.isFinite(id)) notFound();
 
   const userId = await getCurrentUserId();
-  const details = await getChunkDetails(id, userId);
+  const [details, adjacent] = await Promise.all([
+    getChunkDetails(id, userId),
+    getAdjacentChunks(id),
+  ]);
   if (!details) notFound();
 
   const lesson = await getOrCreateLesson(userId, id);
@@ -67,6 +71,37 @@ export default async function LessonPage({
         initialState={lesson.state}
         surahNameTranslit={chunk.surahNameTranslit}
       />
+
+      <nav className="mt-12 flex items-center justify-between gap-3 text-sm">
+        {adjacent.prev ? (
+          <Link
+            href={`/lesson/${adjacent.prev.id}`}
+            className="group flex flex-1 flex-col items-start text-muted-foreground hover:text-foreground"
+          >
+            <span className="text-[11px] uppercase tracking-[0.18em]">Leçon précédente</span>
+            <span className="mt-0.5 inline-flex items-center gap-1 font-display text-base">
+              <ChevLeft className="size-4" />
+              {adjacent.prev.label}
+            </span>
+          </Link>
+        ) : (
+          <span className="flex-1" />
+        )}
+        {adjacent.next ? (
+          <Link
+            href={`/lesson/${adjacent.next.id}`}
+            className="group flex flex-1 flex-col items-end text-muted-foreground hover:text-foreground"
+          >
+            <span className="text-[11px] uppercase tracking-[0.18em]">Leçon suivante</span>
+            <span className="mt-0.5 inline-flex items-center gap-1 font-display text-base">
+              {adjacent.next.label}
+              <ChevRight className="size-4" />
+            </span>
+          </Link>
+        ) : (
+          <span className="flex-1" />
+        )}
+      </nav>
     </div>
   );
 }

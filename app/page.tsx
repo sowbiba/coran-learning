@@ -64,8 +64,22 @@ export default async function Today() {
             {masteredResting.length > 0
               ? ` · ${masteredResting.length} ${masteredResting.length > 1 ? "reviennent" : "revient"} en révision plus tard`
               : ""}
+            {" · "}
+            <Link href="/stats" className="underline-offset-2 hover:underline">
+              voir ma progression
+            </Link>
           </p>
-        ) : null}
+        ) : (
+          <p className="mt-3 text-sm text-muted-foreground">
+            <Link href="/stats" className="underline-offset-2 hover:underline">
+              Ma progression
+            </Link>
+            {" · "}
+            <Link href="/catalogue" className="underline-offset-2 hover:underline">
+              Catalogue complet
+            </Link>
+          </p>
+        )}
       </header>
 
       {isEmpty ? <EmptyState /> : null}
