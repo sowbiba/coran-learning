@@ -4,12 +4,45 @@ import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
 import { teacher } from "@/lib/copy/teacher";
 import { listChunks, type ChunkWithSurah } from "@/lib/content/quran";
+import { getCurrentUserId } from "@/lib/auth/current-user";
+import { listUserLessons } from "@/lib/lessons/repo";
+import { computeDailyQueue } from "@/lib/srs/scheduler";
+import type { Lesson, LessonState } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
 export default async function Today() {
-  const chunks = await listChunks();
-  const sorted = sortChunksForDisplay(chunks);
+  const [chunks, userId] = await Promise.all([listChunks(), getCurrentUserId()]);
+  const lessons = await listUserLessons(userId);
+
+  const lessonByChunk = new Map(lessons.map((l) => [l.chunkId, l]));
+  const queue = computeDailyQueue(lessons, new Date());
+
+  const inProgress: Array<{ chunk: ChunkWithSurah; lesson: Lesson }> = [];
+  const dueRevisions: Array<{ chunk: ChunkWithSurah; lesson: Lesson }> = [];
+  const untouched: ChunkWithSurah[] = [];
+
+  for (const c of sortChunksForDisplay(chunks)) {
+    const l = lessonByChunk.get(c.id);
+    if (!l || l.state === "not_started") {
+      untouched.push(c);
+      continue;
+    }
+    const isMasteredButNotDue = l.state === "mastered" && !queue.sabqi.concat(queue.manzil).find((x) => x.id === l.id);
+    if (isMasteredButNotDue) {
+      // Mastered, on l'affiche dans une 4e section discrète (acquis)
+      // Pour ne pas surcharger /today on les groupe ensemble en bas
+      // (pas de section dédiée pour l'instant — visible dans untouched listing)
+      continue;
+    }
+    if (l.state === "mastered") {
+      dueRevisions.push({ chunk: c, lesson: l });
+    } else {
+      inProgress.push({ chunk: c, lesson: l });
+    }
+  }
+
+  const isEmpty = inProgress.length === 0 && dueRevisions.length === 0 && untouched.length === 0;
 
   return (
     <div className="quiet">
@@ -20,30 +53,75 @@ export default async function Today() {
         <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
           {teacher.today.subtitle}
         </h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Al-Fātiḥa et le 30ème juz' sont disponibles. {sorted.length} leçons à explorer pour le moment.
-        </p>
       </header>
 
-      <Section title="Choisir une leçon">
-        {sorted.map((chunk, idx) => (
-          <ChunkCard key={chunk.id} chunk={chunk} highlight={idx === 0} />
-        ))}
-      </Section>
+      {isEmpty ? <EmptyState /> : null}
 
-      <Separator className="my-10" />
+      {inProgress.length > 0 ? (
+        <Section title={teacher.today.sectionInProgress}>
+          {inProgress.map(({ chunk, lesson }, idx) => (
+            <ChunkCard
+              key={chunk.id}
+              chunk={chunk}
+              lesson={lesson}
+              highlight={idx === 0}
+              primaryAction={primaryActionFor(lesson.state, chunk.id)}
+            />
+          ))}
+        </Section>
+      ) : null}
 
-      <p className="text-xs text-muted-foreground">
-        L'authentification, la persistance des leçons en cours et la file de révision viendront
-        dans les prochaines étapes. Pour l'instant, tu peux ouvrir n'importe quelle sourate
-        pour voir le texte arabe, la traduction et écouter la récitation Husary Muʿallim.
-      </p>
+      {dueRevisions.length > 0 ? (
+        <>
+          <Separator className="my-10" />
+          <Section title={teacher.today.sectionDue}>
+            {dueRevisions.map(({ chunk, lesson }) => (
+              <ChunkCard
+                key={chunk.id}
+                chunk={chunk}
+                lesson={lesson}
+                primaryAction={{ label: teacher.today.actionRevise, href: `/recite/${chunk.id}` }}
+              />
+            ))}
+          </Section>
+        </>
+      ) : null}
+
+      {untouched.length > 0 ? (
+        <>
+          <Separator className="my-10" />
+          <Section title="Leçons à découvrir">
+            {untouched.map((chunk, idx) => (
+              <ChunkCard
+                key={chunk.id}
+                chunk={chunk}
+                highlight={idx === 0 && inProgress.length === 0}
+                primaryAction={{
+                  label: inProgress.length === 0 ? teacher.today.actionStartNew : "Avec le Professeur",
+                  href: `/lesson/${chunk.id}`,
+                }}
+              />
+            ))}
+          </Section>
+        </>
+      ) : null}
     </div>
   );
 }
 
-function ChunkCard({ chunk, highlight }: { chunk: ChunkWithSurah; highlight?: boolean }) {
+function ChunkCard({
+  chunk,
+  lesson,
+  highlight,
+  primaryAction,
+}: {
+  chunk: ChunkWithSurah;
+  lesson?: Lesson;
+  highlight?: boolean;
+  primaryAction: { label: string; href: string };
+}) {
   const periodLabel = chunk.surahPeriod === "meccan" ? "Mecquoise" : "Médinoise";
+  const stateLabel = lesson ? teacher.lessonState[lesson.state] : null;
   return (
     <Card className={highlight ? "border-foreground/20" : undefined}>
       <CardHeader className="space-y-1">
@@ -55,14 +133,15 @@ function ChunkCard({ chunk, highlight }: { chunk: ChunkWithSurah; highlight?: bo
         </div>
         <p className="text-sm text-muted-foreground">
           {chunk.surahNameFr} · {chunk.ayahCount} versets · {periodLabel}
+          {stateLabel ? <span className="ms-2 italic">· {stateLabel}</span> : null}
         </p>
       </CardHeader>
       <CardContent>
         <Link
-          href={`/lesson/${chunk.id}`}
+          href={primaryAction.href}
           className={buttonVariants({ variant: highlight ? "default" : "outline", size: "sm" })}
         >
-          Avec le Professeur
+          {primaryAction.label}
         </Link>
       </CardContent>
     </Card>
@@ -78,11 +157,31 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-/**
- * Ordre d'affichage : Al-Fātiḥa en premier (sourate de la prière, à connaître),
- * puis le reste du juz' 30 en ordre inverse du muṣḥaf (An-Nās → An-Nabaʾ),
- * convention pédagogique : on commence par les sourates les plus courtes.
- */
+function EmptyState() {
+  return (
+    <div className="rounded-lg border border-dashed border-border/60 bg-card/40 p-10 text-center">
+      <p className="font-display text-2xl tracking-tight">{teacher.today.emptyTitle}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{teacher.today.emptySubtitle}</p>
+    </div>
+  );
+}
+
+function primaryActionFor(
+  state: LessonState,
+  chunkId: number,
+): { label: string; href: string } {
+  if (state === "ready_to_recite" || state === "recited") {
+    return { label: "Réciter au Professeur", href: `/recite/${chunkId}` };
+  }
+  if (state === "introduced") {
+    return { label: "Pratiquer", href: `/practice/${chunkId}` };
+  }
+  if (state === "learning") {
+    return { label: "Continuer la pratique", href: `/practice/${chunkId}` };
+  }
+  return { label: teacher.today.actionContinue, href: `/lesson/${chunkId}` };
+}
+
 function sortChunksForDisplay(chunks: ChunkWithSurah[]): ChunkWithSurah[] {
   const fatiha = chunks.find((c) => c.surahId === 1);
   const rest = chunks
