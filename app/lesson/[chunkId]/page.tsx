@@ -31,7 +31,7 @@ export default async function LessonPage({
 
   const lesson = await getOrCreateLesson(userId, id);
 
-  const { chunk, ayahs } = details;
+  const { chunk, ayahs, bismillah } = details;
   const periodLabel = chunk.surahPeriod === "meccan" ? "Mecquoise" : "Médinoise";
 
   return (
@@ -70,6 +70,7 @@ export default async function LessonPage({
         ayahs={ayahs}
         initialState={lesson.state}
         surahNameTranslit={chunk.surahNameTranslit}
+        bismillah={bismillah}
       />
 
       <nav className="mt-12 flex items-center justify-between gap-3 text-sm">

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { teacher } from "@/lib/copy/teacher";
 import { VoiceRecorder } from "@/components/voice-recorder";
 import { NoteEditor } from "@/components/note-editor";
+import { BismillahHeader } from "@/components/bismillah-header";
 import type { ChunkAyah } from "@/lib/content/quran";
 
 const SPEEDS = [0.75, 1, 1.25] as const;
@@ -15,6 +16,7 @@ const SPEEDS = [0.75, 1, 1.25] as const;
 type Props = {
   ayahs: ChunkAyah[];
   surahNameTranslit: string;
+  bismillah: string | null;
 };
 
 /**
@@ -28,7 +30,7 @@ type Props = {
  * Pas de mutation côté DB pour l'instant — l'auth viendra ensuite et on
  * câblera POST /api/recitations + PATCH /api/lessons.
  */
-export function PracticeFlow({ ayahs, surahNameTranslit }: Props) {
+export function PracticeFlow({ ayahs, surahNameTranslit, bismillah }: Props) {
   const [index, setIndex] = useState(0);
   const [showTranslit, setShowTranslit] = useState(true);
   const [showTranslation, setShowTranslation] = useState(true);
@@ -131,6 +133,10 @@ export function PracticeFlow({ ayahs, surahNameTranslit }: Props) {
 
       {/* Verset */}
       <article className="space-y-6">
+        {bismillah && ayah.numberInSurah === 1 ? (
+          <BismillahHeader text={bismillah} />
+        ) : null}
+
         <p
           lang="ar"
           dir="rtl"

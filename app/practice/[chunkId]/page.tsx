@@ -24,7 +24,7 @@ export default async function PracticePage({
   const details = await getChunkDetails(id, userId);
   if (!details) notFound();
 
-  const { chunk, ayahs } = details;
+  const { chunk, ayahs, bismillah } = details;
 
   return (
     <div className="quiet">
@@ -46,7 +46,11 @@ export default async function PracticePage({
         <p className="mt-1 text-sm text-muted-foreground">{teacher.practice.subtitle}</p>
       </header>
 
-      <PracticeFlow ayahs={ayahs} surahNameTranslit={chunk.surahNameTranslit} />
+      <PracticeFlow
+        ayahs={ayahs}
+        surahNameTranslit={chunk.surahNameTranslit}
+        bismillah={bismillah}
+      />
     </div>
   );
 }

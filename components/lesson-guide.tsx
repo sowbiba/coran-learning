@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { AudioPlayer } from "@/components/audio-player";
+import { BismillahHeader } from "@/components/bismillah-header";
 import { NoteEditor } from "@/components/note-editor";
 import { cn } from "@/lib/utils";
 import { teacher } from "@/lib/copy/teacher";
@@ -67,6 +68,7 @@ type Props = {
   ayahs: ChunkAyah[];
   initialState: LessonState;
   surahNameTranslit: string;
+  bismillah: string | null;
 };
 
 /**
@@ -80,7 +82,7 @@ type Props = {
  * via PATCH /api/lessons/[id] et propose de continuer en pratique
  * autonome ou de venir réciter directement.
  */
-export function LessonGuide({ chunkId, lessonId, ayahs, initialState, surahNameTranslit }: Props) {
+export function LessonGuide({ chunkId, lessonId, ayahs, initialState, surahNameTranslit, bismillah }: Props) {
   const router = useRouter();
   const [stepIdx, setStepIdx] = useState(0);
   const [submitting, startTransition] = useTransition();
@@ -153,6 +155,8 @@ export function LessonGuide({ chunkId, lessonId, ayahs, initialState, surahNameT
       </header>
 
       <Separator />
+
+      {bismillah && current.showArabic ? <BismillahHeader text={bismillah} /> : null}
 
       <ol className="space-y-1 divide-y divide-border/40">
         {ayahs.map((ayah, idx) => (

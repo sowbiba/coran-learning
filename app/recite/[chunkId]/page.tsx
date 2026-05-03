@@ -28,7 +28,7 @@ export default async function RecitePage({
   const initial = await getOrCreateLesson(userId, id);
   const lesson = await prepareLessonForRecitation(initial);
 
-  const { chunk, ayahs } = details;
+  const { chunk, ayahs, bismillah } = details;
 
   return (
     <div className="quiet">
@@ -49,7 +49,13 @@ export default async function RecitePage({
         </h1>
       </header>
 
-      <ReciteFlow chunkId={chunk.id} lessonId={lesson.id} ayahs={ayahs} initialState={lesson.state} />
+      <ReciteFlow
+        chunkId={chunk.id}
+        lessonId={lesson.id}
+        ayahs={ayahs}
+        initialState={lesson.state}
+        bismillah={bismillah}
+      />
     </div>
   );
 }

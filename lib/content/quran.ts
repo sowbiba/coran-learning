@@ -21,6 +21,11 @@ import {
   type Surah,
 } from "@/lib/db/schema";
 import { listNotesForAyahs } from "@/lib/notes/repo";
+import {
+  BISMILLAH_DISPLAY,
+  shouldDisplaySeparateBismillah,
+  stripBismillah,
+} from "@/lib/content/bismillah";
 
 const TRANSLATION_SOURCE = "hamidullah_complexe_roi_fahd";
 const RECITER_DEFAULT = "husary_muallim_128";
@@ -87,6 +92,13 @@ export type ChunkAyah = {
 export type ChunkDetails = {
   chunk: ChunkWithSurah;
   ayahs: ChunkAyah[];
+  /**
+   * Texte de la Basmala à afficher en en-tête, *uniquement* si ce chunk
+   * inclut le verset 1 d'une sourate qui débute par une Basmala (i.e.
+   * toutes sauf Al-Fātiḥa où elle EST le verset 1, et At-Tawba qui n'en
+   * a pas). Le texte du verset 1 a alors été dépouillé de sa Basmala.
+   */
+  bismillah: string | null;
 };
 
 export async function getChunkDetails(
@@ -140,19 +152,36 @@ export async function getChunkDetails(
       )
     : new Map<number, { bodyMd: string }>();
 
-  const ayahs: ChunkAyah[] = ayahRows.map(({ ayah, translation, audio, translit }) => ({
-    id: ayah.id,
-    numberInSurah: ayah.numberInSurah,
-    textUthmani: ayah.textUthmani,
-    textImlaei: ayah.textImlaei,
-    juz: ayah.juz,
-    page: ayah.page,
-    hizb: ayah.hizb,
-    textFr: translation?.text ?? null,
-    transliteration: translit?.wordsJson ?? null,
-    audioUrl: audio?.url ?? null,
-    noteBodyMd: notesByAyah.get(ayah.id)?.bodyMd ?? null,
-  }));
+  // Si le chunk inclut le verset 1 et que la sourate démarre par une
+  // Basmala (toutes sauf 1 et 9), on l'extrait du texte du v1 pour
+  // l'afficher séparément en en-tête.
+  const includesV1 = ayahRows.some((r) => r.ayah.numberInSurah === 1);
+  const showSeparate =
+    includesV1 && shouldDisplaySeparateBismillah(chunk.surahId);
+
+  const ayahs: ChunkAyah[] = ayahRows.map(({ ayah, translation, audio, translit }) => {
+    const stripUthmani =
+      showSeparate && ayah.numberInSurah === 1
+        ? stripBismillah(ayah.textUthmani)
+        : ayah.textUthmani;
+    const stripImlaei =
+      showSeparate && ayah.numberInSurah === 1 && ayah.textImlaei
+        ? stripBismillah(ayah.textImlaei)
+        : ayah.textImlaei;
+    return {
+      id: ayah.id,
+      numberInSurah: ayah.numberInSurah,
+      textUthmani: stripUthmani,
+      textImlaei: stripImlaei,
+      juz: ayah.juz,
+      page: ayah.page,
+      hizb: ayah.hizb,
+      textFr: translation?.text ?? null,
+      transliteration: translit?.wordsJson ?? null,
+      audioUrl: audio?.url ?? null,
+      noteBodyMd: notesByAyah.get(ayah.id)?.bodyMd ?? null,
+    };
+  });
 
   return {
     chunk: {
@@ -163,6 +192,7 @@ export async function getChunkDetails(
       surahPeriod: surah.period,
     },
     ayahs,
+    bismillah: showSeparate ? BISMILLAH_DISPLAY : null,
   };
 }
 

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { BismillahHeader } from "@/components/bismillah-header";
 import { cn } from "@/lib/utils";
 import { teacher } from "@/lib/copy/teacher";
 import type { ChunkAyah } from "@/lib/content/quran";
@@ -19,6 +20,7 @@ type Props = {
   lessonId: string;
   ayahs: ChunkAyah[];
   initialState: LessonState;
+  bismillah: string | null;
 };
 
 /**
@@ -31,7 +33,7 @@ type Props = {
  * Persistance DB : à brancher après Auth.js. Pour l'instant, les ratings
  * restent en mémoire de la session et le bouton final affiche un toast.
  */
-export function ReciteFlow({ chunkId, lessonId, ayahs, initialState }: Props) {
+export function ReciteFlow({ chunkId, lessonId, ayahs, initialState, bismillah }: Props) {
   const router = useRouter();
   const [revealed, setRevealed] = useState<Record<number, boolean>>({});
   const [ratings, setRatings] = useState<Record<number, Rating>>({});
@@ -98,6 +100,8 @@ export function ReciteFlow({ chunkId, lessonId, ayahs, initialState }: Props) {
   return (
     <div className="space-y-8">
       <p className="text-sm text-muted-foreground">{teacher.recite.subtitle}</p>
+
+      {bismillah ? <BismillahHeader text={bismillah} /> : null}
 
       <ol className="space-y-1 divide-y divide-border/40">
         {ayahs.map((ayah) => (
