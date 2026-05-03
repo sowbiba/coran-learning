@@ -70,8 +70,9 @@ Contraintes strictes :
 Réponds UNIQUEMENT avec le texte FR condensé. Pas de préambule, pas de méta-commentaire.`;
 
 function isEnglishFile(md: string): boolean {
-  // Détecte par le footer ajouté par fetch-surah-intros.ts
-  return /Source : [^*]+\(anglais à traduire\)/.test(md);
+  // Détecte par le footer ajouté par fetch-surah-intros.ts.
+  // Format actuel : "Source : ... (anglais (à traduire))." (parens imbriquées)
+  return /\banglais\b[^*]*à traduire/.test(md);
 }
 
 function extractTitleAndBody(md: string): { title: string; body: string } | null {

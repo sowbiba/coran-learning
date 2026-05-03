@@ -9,11 +9,13 @@ import { teacher } from "@/lib/copy/teacher";
 import { VoiceRecorder } from "@/components/voice-recorder";
 import { NoteEditor } from "@/components/note-editor";
 import { BismillahHeader } from "@/components/bismillah-header";
+import Link from "next/link";
 import type { ChunkAyah } from "@/lib/content/quran";
 
 const SPEEDS = [0.75, 1, 1.25] as const;
 
 type Props = {
+  chunkId: number;
   ayahs: ChunkAyah[];
   surahNameTranslit: string;
   bismillah: string | null;
@@ -30,7 +32,7 @@ type Props = {
  * Pas de mutation côté DB pour l'instant — l'auth viendra ensuite et on
  * câblera POST /api/recitations + PATCH /api/lessons.
  */
-export function PracticeFlow({ ayahs, surahNameTranslit, bismillah }: Props) {
+export function PracticeFlow({ chunkId, ayahs, surahNameTranslit, bismillah }: Props) {
   const [index, setIndex] = useState(0);
   const [showTranslit, setShowTranslit] = useState(true);
   const [showTranslation, setShowTranslation] = useState(true);
@@ -261,17 +263,12 @@ export function PracticeFlow({ ayahs, surahNameTranslit, bismillah }: Props) {
       {/* Action finale */}
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">{teacher.practice.actionReadyHint}</p>
-        <a
-          href="."
-          onClick={(e) => {
-            e.preventDefault();
-            // Stub : on naviguera vers /recite/[chunkId] depuis le parent.
-            window.dispatchEvent(new CustomEvent("practice:ready-to-recite"));
-          }}
+        <Link
+          href={`/recite/${chunkId}`}
           className={buttonVariants({ variant: "default" })}
         >
           {teacher.practice.actionReadyToRecite}
-        </a>
+        </Link>
       </div>
     </div>
   );

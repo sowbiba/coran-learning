@@ -47,6 +47,7 @@ export default async function PracticePage({
       </header>
 
       <PracticeFlow
+        chunkId={chunk.id}
         ayahs={ayahs}
         surahNameTranslit={chunk.surahNameTranslit}
         bismillah={bismillah}
