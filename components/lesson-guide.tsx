@@ -252,9 +252,18 @@ function GuideAyah({
         >
           {ayah.textUthmani}
         </p>
+      ) : ayah.audioUrl ? (
+        // Étape "Écoute" : on met le bouton audio au centre, gros, comme
+        // CTA principal — c'est l'objet de l'étape.
+        <div className="flex flex-col items-center gap-2 py-6">
+          <AudioPlayer src={ayah.audioUrl} label="Écouter ce verset" />
+          <p className="text-xs text-muted-foreground">
+            Verset {ayah.numberInSurah} — laisse la voix entrer.
+          </p>
+        </div>
       ) : (
         <p className="font-display text-base text-muted-foreground">
-          Verset {ayah.numberInSurah} — écoute la récitation.
+          Verset {ayah.numberInSurah} — audio non disponible.
         </p>
       )}
 

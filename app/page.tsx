@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { buttonVariants } from "@/components/ui/button";
@@ -145,7 +146,8 @@ export default async function Today() {
         <>
           <Separator className="my-10" />
           <details className="group">
-            <summary className="cursor-pointer text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground">
+            <summary className="flex cursor-pointer list-none items-center gap-2 text-sm uppercase tracking-[0.15em] text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+              <ChevronRight className="size-3 transition-transform group-open:rotate-90" />
               Leçons en repos ({masteredResting.length})
             </summary>
             <p className="mt-3 mb-4 text-xs text-muted-foreground">
