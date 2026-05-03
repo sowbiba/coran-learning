@@ -195,12 +195,18 @@ function ChunkCard({
           {stateLabel ? <span className="ms-2 italic">· {stateLabel}</span> : null}
         </p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-wrap items-center gap-2">
         <Link
           href={primaryAction.href}
           className={buttonVariants({ variant: highlight ? "default" : "outline", size: "sm" })}
         >
           {primaryAction.label}
+        </Link>
+        <Link
+          href={`/read/${chunk.id}`}
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
+        >
+          {teacher.read.actionOpen}
         </Link>
       </CardContent>
     </Card>

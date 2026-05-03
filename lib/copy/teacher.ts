@@ -44,6 +44,13 @@ export const teacher = {
     actionReplay: "Reprenons depuis le début",
   },
 
+  // Vue lecture (read)
+  read: {
+    title: "Lire la leçon",
+    subtitle: "Texte arabe, prononciation et traduction réunis. Tu peux écouter chaque verset.",
+    actionOpen: "Lire",
+  },
+
   // En autonomie (practice)
   practice: {
     title: "En autonomie",

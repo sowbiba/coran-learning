@@ -45,15 +45,25 @@ export default async function LessonPage({
       </Link>
 
       <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {teacher.lesson.title}
-        </p>
-        <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
-          {chunk.surahNameTranslit}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {chunk.surahNameFr} · Sourate {chunk.surahId} · {chunk.ayahCount} versets · {periodLabel}
-        </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+              {teacher.lesson.title}
+            </p>
+            <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
+              {chunk.surahNameTranslit}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {chunk.surahNameFr} · Sourate {chunk.surahId} · {chunk.ayahCount} versets · {periodLabel}
+            </p>
+          </div>
+          <Link
+            href={`/read/${chunk.id}`}
+            className={`${buttonVariants({ variant: "ghost", size: "sm" })} shrink-0 text-muted-foreground hover:text-foreground`}
+          >
+            {teacher.read.actionOpen}
+          </Link>
+        </div>
         <p
           lang="ar"
           dir="rtl"
