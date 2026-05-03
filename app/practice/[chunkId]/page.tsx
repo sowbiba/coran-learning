@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
 import { PracticeFlow } from "@/components/practice-flow";
+import { BackLink, ChunkPageHeader } from "@/components/page-header";
 import { teacher } from "@/lib/copy/teacher";
 import { getChunkDetails } from "@/lib/content/quran";
 import { getCurrentUserId } from "@/lib/auth/current-user";
@@ -28,23 +26,13 @@ export default async function PracticePage({
 
   return (
     <div className="quiet">
-      <Link
-        href={`/lesson/${chunk.id}`}
-        className={`${buttonVariants({ variant: "ghost", size: "sm" })} mb-6 -ms-2 text-muted-foreground hover:text-foreground`}
-      >
-        <ArrowLeft className="me-1 size-4" />
-        Retour à la leçon
-      </Link>
+      <BackLink href={`/lesson/${chunk.id}`} label="Retour à la leçon" />
 
-      <header className="mb-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {teacher.practice.title}
-        </p>
-        <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
-          {chunk.surahNameTranslit}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">{teacher.practice.subtitle}</p>
-      </header>
+      <ChunkPageHeader
+        eyebrow={teacher.practice.title}
+        title={chunk.surahNameTranslit}
+        subtitle={teacher.practice.subtitle}
+      />
 
       <PracticeFlow
         chunkId={chunk.id}

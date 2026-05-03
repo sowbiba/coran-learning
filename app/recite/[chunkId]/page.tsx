@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
 import { ReciteFlow } from "@/components/recite-flow";
+import { BackLink, ChunkPageHeader } from "@/components/page-header";
 import { teacher } from "@/lib/copy/teacher";
 import { getChunkDetails } from "@/lib/content/quran";
 import { getCurrentUserId } from "@/lib/auth/current-user";
@@ -32,22 +30,12 @@ export default async function RecitePage({
 
   return (
     <div className="quiet">
-      <Link
-        href={`/lesson/${chunk.id}`}
-        className={`${buttonVariants({ variant: "ghost", size: "sm" })} mb-6 -ms-2 text-muted-foreground hover:text-foreground`}
-      >
-        <ArrowLeft className="me-1 size-4" />
-        Retour à la leçon
-      </Link>
+      <BackLink href={`/lesson/${chunk.id}`} label="Retour à la leçon" />
 
-      <header className="mb-6">
-        <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          {teacher.recite.title}
-        </p>
-        <h1 className="mt-2 font-display text-4xl leading-tight tracking-tight">
-          {chunk.surahNameTranslit}
-        </h1>
-      </header>
+      <ChunkPageHeader
+        eyebrow={teacher.recite.title}
+        title={chunk.surahNameTranslit}
+      />
 
       <ReciteFlow
         chunkId={chunk.id}

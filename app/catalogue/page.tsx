@@ -1,7 +1,5 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { asc, eq } from "drizzle-orm";
-import { buttonVariants } from "@/components/ui/button";
+import { BackLink } from "@/components/page-header";
 import { CatalogueList, type CatalogueChunk } from "@/components/catalogue-list";
 import { db } from "@/lib/db/client";
 import {
@@ -41,13 +39,7 @@ export default async function Catalogue() {
 
   return (
     <div className="quiet">
-      <Link
-        href="/"
-        className={`${buttonVariants({ variant: "ghost", size: "sm" })} mb-6 -ms-2 text-muted-foreground hover:text-foreground`}
-      >
-        <ArrowLeft className="me-1 size-4" />
-        Retour au tableau du jour
-      </Link>
+      <BackLink href="/" label="Retour au tableau du jour" />
 
       <header className="mb-8">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">

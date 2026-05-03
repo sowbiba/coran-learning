@@ -1,9 +1,7 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { buttonVariants } from "@/components/ui/button";
+import { BackLink } from "@/components/page-header";
 import { teacher } from "@/lib/copy/teacher";
 import { getCurrentUserId } from "@/lib/auth/current-user";
 import { getUserStats } from "@/lib/stats/repo";
@@ -19,13 +17,7 @@ export default async function StatsPage() {
 
   return (
     <div className="quiet">
-      <Link
-        href="/"
-        className={`${buttonVariants({ variant: "ghost", size: "sm" })} mb-6 -ms-2 text-muted-foreground hover:text-foreground`}
-      >
-        <ArrowLeft className="me-1 size-4" />
-        Retour au tableau du jour
-      </Link>
+      <BackLink href="/" label="Retour au tableau du jour" />
 
       <header className="mb-10">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
