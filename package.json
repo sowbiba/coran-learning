@@ -15,7 +15,9 @@
     "db:studio": "drizzle-kit studio",
     "ingest:quran": "tsx --env-file=.env.local scripts/ingest-quran.ts",
     "fetch:notion": "tsx --env-file=.env.local scripts/fetch-notion.ts",
-    "ingest:notion": "tsx --env-file=.env.local scripts/notion-translit-ingest.ts"
+    "ingest:notion": "tsx --env-file=.env.local scripts/notion-translit-ingest.ts",
+    "fetch:intros": "tsx scripts/fetch-surah-intros.ts",
+    "seed:intros": "tsx --env-file=.env.local scripts/seed-surah-intros.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

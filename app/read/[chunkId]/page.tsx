@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { ReadView } from "@/components/read-view";
+import { SurahIntro } from "@/components/surah-intro";
 import { teacher } from "@/lib/copy/teacher";
 import { getChunkDetails } from "@/lib/content/quran";
 import { getCurrentUserId } from "@/lib/auth/current-user";
@@ -56,6 +57,8 @@ export default async function ReadPage({
           {chunk.surahNameAr}
         </p>
       </header>
+
+      <SurahIntro markdown={chunk.surahIntroFrMd} />
 
       <ReadView
         ayahs={ayahs}

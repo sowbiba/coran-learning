@@ -39,6 +39,7 @@ export type ChunkWithSurah = Chunk & {
   surahNameFr: string;
   surahNameTranslit: string;
   surahPeriod: "meccan" | "medinan";
+  surahIntroFrMd: string | null;
 };
 
 /**
@@ -63,6 +64,7 @@ export async function listChunks(): Promise<ChunkWithSurah[]> {
     surahNameFr: surah.nameFr,
     surahNameTranslit: surah.nameTranslit,
     surahPeriod: surah.period,
+    surahIntroFrMd: surah.introFrMd,
   }));
 }
 
@@ -190,6 +192,7 @@ export async function getChunkDetails(
       surahNameFr: surah.nameFr,
       surahNameTranslit: surah.nameTranslit,
       surahPeriod: surah.period,
+      surahIntroFrMd: surah.introFrMd,
     },
     ayahs,
     bismillah: showSeparate ? BISMILLAH_DISPLAY : null,

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { LessonGuide } from "@/components/lesson-guide";
+import { SurahIntro } from "@/components/surah-intro";
 import { teacher } from "@/lib/copy/teacher";
 import { ChevronLeft as ChevLeft, ChevronRight as ChevRight } from "lucide-react";
 import { getAdjacentChunks, getChunkDetails } from "@/lib/content/quran";
@@ -73,6 +74,8 @@ export default async function LessonPage({
           {chunk.surahNameAr}
         </p>
       </header>
+
+      <SurahIntro markdown={chunk.surahIntroFrMd} />
 
       <LessonGuide
         chunkId={chunk.id}
