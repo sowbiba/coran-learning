@@ -14,6 +14,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "ingest:quran": "tsx --env-file=.env.local scripts/ingest-quran.ts",
+    "fetch:notion": "tsx --env-file=.env.local scripts/fetch-notion.ts",
     "ingest:notion": "tsx --env-file=.env.local scripts/notion-translit-ingest.ts"
   },
   "dependencies": {
