@@ -235,12 +235,12 @@ export function PracticeFlow({ chunkId, ayahs, surahNameTranslit, bismillah }: P
         <ToggleChip
           active={showTranslit}
           onClick={() => setShowTranslit((v) => !v)}
-          label="Translittération"
+          label={teacher.practice.toggleTranslit}
         />
         <ToggleChip
           active={showTranslation}
           onClick={() => setShowTranslation((v) => !v)}
-          label="Traduction"
+          label={teacher.practice.toggleTranslation}
         />
       </div>
 
@@ -249,12 +249,9 @@ export function PracticeFlow({ chunkId, ayahs, surahNameTranslit, bismillah }: P
       {/* Enregistrement vocal pour ce verset */}
       <section className="space-y-2">
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-          Enregistrement
+          {teacher.practice.recordTitle}
         </p>
-        <p className="text-sm text-muted-foreground">
-          Enregistre-toi en récitant, puis ré-écoute-toi pour t'auto-corriger.
-          Reste local, sur cet appareil uniquement.
-        </p>
+        <p className="text-sm text-muted-foreground">{teacher.practice.recordHint}</p>
         <VoiceRecorder ayahId={ayah.id} />
       </section>
 
@@ -295,7 +292,7 @@ function ToggleChip({
           : "border-border/40 text-muted-foreground hover:text-foreground",
       )}
     >
-      {label} {active ? "·  visible" : "·  masquée"}
+      {label} · {active ? teacher.practice.toggleStateVisible : teacher.practice.toggleStateHidden}
     </button>
   );
 }

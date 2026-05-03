@@ -61,6 +61,13 @@ export const teacher = {
     actionRecord: "M'enregistrer",
     actionReadyToRecite: "Je suis prêt à réciter",
     actionReadyHint: "Le Professeur t'écoutera.",
+    toggleTranslit: "Translittération",
+    toggleTranslation: "Traduction",
+    toggleStateVisible: "visible",
+    toggleStateHidden: "masquée",
+    recordTitle: "Enregistrement",
+    recordHint:
+      "Enregistre-toi en récitant, puis ré-écoute-toi pour t'auto-corriger. Reste local, sur cet appareil uniquement.",
   },
 
   // Réciter au Professeur (recite)
