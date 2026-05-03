@@ -130,19 +130,21 @@ export function ReciteFlow({ chunkId, lessonId, ayahs, initialState, bismillah }
               </Button>
             </header>
 
-            <div
-              lang="ar"
-              dir="rtl"
-              className={cn(
-                "arabic text-balance text-3xl leading-[2.4] transition-all",
-                revealed[ayah.id]
-                  ? "text-foreground"
-                  : "select-none text-foreground/0 [text-shadow:0_0_24px_var(--muted-foreground)] saturate-0",
-              )}
-              aria-hidden={!revealed[ayah.id]}
-            >
-              {revealed[ayah.id] ? ayah.textUthmani : "● ".repeat(Math.min(20, ayah.textUthmani.length))}
-            </div>
+            {revealed[ayah.id] ? (
+              <p
+                lang="ar"
+                dir="rtl"
+                className="arabic text-balance text-3xl leading-[2.4] text-foreground transition-all"
+              >
+                {ayah.textUthmani}
+              </p>
+            ) : (
+              <div
+                aria-label="Texte masqué — récite de mémoire"
+                role="presentation"
+                className="h-20 rounded-md bg-muted/30 ring-1 ring-foreground/5"
+              />
+            )}
 
             <div className="flex flex-wrap gap-2">
               <RatingButton
