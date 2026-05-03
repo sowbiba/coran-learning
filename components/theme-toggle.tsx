@@ -39,12 +39,7 @@ export function ThemeToggle() {
   // Pendant l'hydratation : on rend un placeholder de la même taille
   // pour préserver le layout, mais sans icône (évite le flicker).
   if (!mounted) {
-    return (
-      <div
-        aria-hidden
-        className="fixed top-3 right-3 z-50 size-9 rounded-full"
-      />
-    );
+    return <div aria-hidden className="size-9 rounded-full" />;
   }
 
   const current = (ORDER.includes(theme as Mode) ? theme : "system") as Mode;
@@ -58,7 +53,7 @@ export function ThemeToggle() {
       aria-label={LABELS[current]}
       title={LABELS[current]}
       className={cn(
-        "fixed top-3 right-3 z-50 inline-flex size-9 items-center justify-center",
+        "inline-flex size-9 items-center justify-center",
         "rounded-full border border-border/60 bg-card/80 text-muted-foreground",
         "shadow-sm backdrop-blur transition-colors",
         "hover:border-foreground/30 hover:text-foreground",

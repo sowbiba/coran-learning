@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { PWAClient } from "@/components/storage-persistence";
 import { SyncStatus } from "@/components/sync-status";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserMenu } from "@/components/user-menu";
 import "./globals.css";
 
 const inter = Inter({
@@ -73,7 +74,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <TooltipProvider delay={300}>
               {children}
               <Toaster richColors position="top-center" />
-              <ThemeToggle />
+              <div className="fixed top-3 right-3 z-50 flex items-center gap-2">
+                <UserMenu />
+                <ThemeToggle />
+              </div>
               <PWAClient />
               <SyncStatus />
             </TooltipProvider>
