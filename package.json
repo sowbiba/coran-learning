@@ -17,12 +17,14 @@
     "fetch:notion": "tsx --env-file=.env.local scripts/fetch-notion.ts",
     "ingest:notion": "tsx --env-file=.env.local scripts/notion-translit-ingest.ts",
     "fetch:intros": "tsx scripts/fetch-surah-intros.ts",
+    "translate:intros": "tsx --env-file=.env.local scripts/translate-intros.ts",
     "seed:intros": "tsx --env-file=.env.local scripts/seed-surah-intros.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
     "@neondatabase/serverless": "^1.1.0",
     "@tanstack/react-query": "^5.100.8",
+    "ai": "^6.0.174",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dexie": "^4.4.2",
