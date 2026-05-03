@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Cormorant_Garamond } from "next/font/google";
+import { Inter, Cormorant_Garamond, Amiri_Quran } from "next/font/google";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +19,13 @@ const cormorant = Cormorant_Garamond({
   variable: "--font-display",
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+const amiriQuran = Amiri_Quran({
+  variable: "--font-arabic",
+  subsets: ["arabic"],
+  weight: ["400"],
   display: "swap",
 });
 
@@ -58,7 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${inter.variable} ${cormorant.variable} h-full antialiased`}
+      className={`${inter.variable} ${cormorant.variable} ${amiriQuran.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
