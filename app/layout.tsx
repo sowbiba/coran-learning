@@ -8,6 +8,7 @@ import { PWAClient } from "@/components/storage-persistence";
 import { SyncStatus } from "@/components/sync-status";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/user-menu";
+import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
 const inter = Inter({
@@ -72,7 +73,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <QueryProvider>
             <TooltipProvider delay={300}>
-              {children}
+              <main className="flex-1">{children}</main>
+              <SiteFooter />
               <Toaster richColors position="top-center" />
               <div className="fixed top-3 right-3 z-50 flex items-center gap-2">
                 <UserMenu />
