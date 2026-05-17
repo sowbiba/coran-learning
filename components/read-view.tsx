@@ -265,7 +265,8 @@ export function ReadView({ ayahs, surahNameTranslit, bismillah }: Props) {
                       key={wIdx}
                       className={cn(
                         "transition-colors",
-                        isActiveWord && "text-primary",
+                        isCurrent && !isActiveWord && "text-foreground/40",
+                        isActiveWord && "text-emerald-500 dark:text-emerald-400",
                       )}
                     >
                       {word}
