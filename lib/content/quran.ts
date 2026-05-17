@@ -87,6 +87,12 @@ export type ChunkAyah = {
   transliteration: { ar: string; latin: string }[] | null;
   /** URL audio Husary Muʿallim 128 kbps. */
   audioUrl: string | null;
+  /**
+   * Timings mot-à-mot pour la surbrillance pendant la lecture.
+   * Tuple [wordIndex 1-based aligné sur whitespace-split de textUthmani,
+   * startMs, endMs] relatifs au début du mp3 par verset.
+   */
+  segments: [number, number, number][] | null;
   /** Note libre de l'élève sur ce verset (markdown). null si pas de note. */
   noteBodyMd: string | null;
 };
@@ -181,6 +187,7 @@ export async function getChunkDetails(
       textFr: translation?.text ?? null,
       transliteration: translit?.wordsJson ?? null,
       audioUrl: audio?.url ?? null,
+      segments: audio?.segmentsJson ?? null,
       noteBodyMd: notesByAyah.get(ayah.id)?.bodyMd ?? null,
     };
   });

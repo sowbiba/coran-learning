@@ -32,8 +32,51 @@ type Props = {
  */
 export function ReadView({ ayahs, surahNameTranslit, bismillah }: Props) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
   const [playingIdx, setPlayingIdx] = useState<number | null>(null);
   const [paused, setPaused] = useState(false);
+  /** Index 1-based du mot du verset en cours, ou 0 si avant le 1er mot. */
+  const [currentWord, setCurrentWord] = useState(0);
+
+  // Scroll auto vers le verset en cours de lecture
+  useEffect(() => {
+    if (playingIdx === null) return;
+    const el = itemRefs.current[playingIdx];
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [playingIdx]);
+
+  // Surbrillance mot-à-mot — pendant la lecture, on retrouve le segment
+  // dont [startMs, endMs] englobe audio.currentTime.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || playingIdx === null) {
+      setCurrentWord(0);
+      return;
+    }
+    const segments = ayahs[playingIdx]?.segments;
+    if (!segments || segments.length === 0) {
+      setCurrentWord(0);
+      return;
+    }
+    function onTimeUpdate() {
+      if (!audio) return;
+      const ms = audio.currentTime * 1000;
+      // Recherche linéaire — au plus quelques dizaines de mots par verset.
+      let found = 0;
+      for (const [wIdx, start, end] of segments!) {
+        if (ms >= start && ms < end) {
+          found = wIdx;
+          break;
+        }
+        if (ms >= end) found = wIdx;
+      }
+      setCurrentWord(found);
+    }
+    onTimeUpdate();
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    return () => audio.removeEventListener("timeupdate", onTimeUpdate);
+  }, [playingIdx, ayahs]);
 
   // Quand playingIdx change, charge et joue l'audio du verset à cet index
   useEffect(() => {
@@ -171,9 +214,13 @@ export function ReadView({ ayahs, surahNameTranslit, bismillah }: Props) {
       <ol className="divide-y divide-border/40">
         {ayahs.map((ayah, idx) => {
           const isCurrent = idx === playingIdx;
+          const words = ayah.textUthmani.trim().split(/\s+/);
           return (
             <li
               key={ayah.id}
+              ref={(el) => {
+                itemRefs.current[idx] = el;
+              }}
               className={cn(
                 "space-y-3 py-6 first:pt-0 last:pb-0 transition-colors",
                 isCurrent && "rounded-md bg-foreground/[0.03] px-3 ring-1 ring-foreground/10",
@@ -211,7 +258,22 @@ export function ReadView({ ayahs, surahNameTranslit, bismillah }: Props) {
                 dir="rtl"
                 className="arabic text-balance text-3xl leading-[2.4] text-foreground"
               >
-                {ayah.textUthmani}
+                {words.map((word, wIdx) => {
+                  const isActiveWord = isCurrent && wIdx + 1 === currentWord;
+                  return (
+                    <span
+                      key={wIdx}
+                      className={cn(
+                        "transition-colors",
+                        isActiveWord &&
+                          "rounded bg-foreground/10 px-1 text-foreground",
+                      )}
+                    >
+                      {word}
+                      {wIdx < words.length - 1 ? " " : ""}
+                    </span>
+                  );
+                })}
               </p>
 
               {ayah.transliteration && ayah.transliteration.length > 0 ? (

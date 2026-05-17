@@ -170,6 +170,14 @@ export type TransliterationWord = {
   latin: string; // translittération latine
 };
 
+/**
+ * Timings mot-à-mot pour la surbrillance pendant la lecture audio.
+ * Chaque tuple = [wordIndex (1-based, suit le découpage quran.com qui s'aligne
+ * sur la tokenisation whitespace de textUthmani), startMs, endMs] — timestamps
+ * relatifs au début du mp3 par verset.
+ */
+export type AudioSegment = [number, number, number];
+
 export const audioFiles = pgTable(
   "audio_files",
   {
@@ -179,6 +187,7 @@ export const audioFiles = pgTable(
     reciter: text("reciter").notNull(), // ex. "husary_muallim_128"
     url: text("url").notNull(),
     durationMs: integer("duration_ms"),
+    segmentsJson: jsonb("segments_json").$type<AudioSegment[]>(),
   },
   (t) => [primaryKey({ columns: [t.ayahId, t.reciter] })],
 );
