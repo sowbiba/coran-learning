@@ -6,26 +6,30 @@ Application web (PWA) pour mémoriser et comprendre le Coran, en français — d
 
 <p align="center">
   <img width="380" alt="Le tableau du jour : « Ce que ton Professeur te propose », avec les leçons en cours et leur état" src="docs/img/tableau-du-jour.png" />
-  <img width="380" alt="Lecture verset par verset pendant l'écoute : calligraphie arabe KFGQPC, translittération et traduction française, verset actif mis en avant" src="docs/img/lecture-verset-par-verset.png" />
+  <img width="380" alt="Lecture verset par verset pendant l'écoute : calligraphie arabe, translittération et traduction française, verset actif mis en avant" src="docs/img/lecture-verset-par-verset.png" />
 </p>
 
 ## Comment ça marche
 
-<img align="right" width="240" alt="Début d'une leçon : nom de la sourate, présentation de son contexte, puis chaque verset avec son audio" src="docs/img/lecon-contexte.png" />
-
-Chaque leçon est un **chunk** naturel du Coran : une sourate entière si elle est courte, sinon un rukūʿ (unité thématique de ~8–12 versets). Une leçon se vit en trois moments, à ton rythme — elle peut s'étaler sur plusieurs jours :
+Chaque leçon est un **chunk** naturel du Coran : une sourate entière si elle est courte, sinon un rukūʿ (unité thématique de ~8–12 versets) — soit **556 leçons** pour couvrir tout le Coran. Une leçon se vit en trois moments, à ton rythme — elle peut s'étaler sur plusieurs jours :
 
 - **Avec le Professeur** (`/lesson`) — introduction guidée : lecture mot à mot, sens, traduction (Hamidullah), translittération, audio verset par verset.
 - **En autonomie** (`/practice`) — pratique libre : écoute, répétition, texte masqué progressivement.
 - **Réciter au Professeur** (`/recite`) — tu récites de mémoire en t'enregistrant au micro, tu te réécoutes, puis tu t'évalues verset par verset. Pas de reconnaissance vocale, et c'est un choix : dans la méthode traditionnelle aussi, l'élève récite et écoute son propre retour — c'est toi qui juges. Le verdict final fait avancer la leçon vers la maîtrise.
 
-<img align="right" width="240" alt="Le catalogue : tout le Coran en 556 leçons, avec recherche et parcours par juzʾ" src="docs/img/catalogue.png" />
+<p align="center">
+  <img width="300" alt="Début d'une leçon : nom de la sourate, présentation de son contexte, puis chaque verset avec son audio" src="docs/img/lecon-contexte.png" />
+</p>
 
 À côté des leçons :
 
 - **Lecture** (`/read`) — lire n'importe quel passage, avec audio et traduction, sans objectif de mémorisation.
 - **Catalogue** (`/catalogue`) — vue d'ensemble des 114 sourates et de ta progression.
 - **Statistiques** (`/stats`) — ce qui est appris, en cours, à réviser.
+
+<p align="center">
+  <img width="300" alt="Le catalogue : tout le Coran en 556 leçons, avec recherche et parcours par juzʾ" src="docs/img/catalogue.png" />
+</p>
 
 ### Révision (murājaʿa)
 
@@ -43,10 +47,10 @@ C'est une PWA installable : l'audio écouté est mis en cache, et les actions ef
 
 ## Sources et remerciements
 
-- Texte arabe et découpage en rukūʿ : [Tanzil](https://tanzil.net/)
-- Traduction française : Muhammad Hamidullah, via [QuranEnc](https://quranenc.com/)
+- Texte arabe (Uthmani), découpage en rukūʿ et traduction française de Muhammad Hamidullah : API [alquran.cloud](https://alquran.cloud/)
 - Audio : récitation de Cheikh Mahmoud Khalil al-Husary, via [everyayah.com](https://everyayah.com/)
-- Police coranique : KFGQPC (Complexe du Roi Fahd pour l'impression du Noble Coran)
+- Introductions de sourates : Wikipédia FR, avec [Quran.com](https://quran.com/) en repli
+- Police coranique : [Amiri Quran](https://fonts.google.com/specimen/Amiri+Quran) (licence SIL Open Font License), chargée via `next/font` — aucun fichier de police n'est distribué dans ce dépôt
 
 ## Stack technique
 
@@ -68,6 +72,8 @@ npm run db:push         # applique le schéma Drizzle
 npm run ingest:quran    # texte arabe, traduction, découpage en chunks
 npm run ingest:segments # timings audio mot à mot
 ```
+
+Les scripts d'ingestion appellent des sources externes (alquran.cloud, everyayah.com) : compter environ 5 minutes pour les 114 sourates, réseau requis. Ils sont idempotents — on peut les relancer sans risque si l'exécution s'interrompt.
 
 Autres commandes utiles :
 
