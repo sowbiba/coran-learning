@@ -5,13 +5,13 @@ Application web (PWA) pour mémoriser et comprendre le Coran, en français — d
 👉 **[coran-learning.vercel.app](https://coran-learning.vercel.app)**
 
 <p align="center">
-  <img width="49%" alt="Le tableau du jour : « Ce que ton Professeur te propose », avec les leçons en cours et leur état" src="docs/img/tableau-du-jour.png" />
-  <img width="49%" alt="Lecture verset par verset pendant l'écoute : calligraphie arabe KFGQPC, translittération et traduction française, verset actif mis en avant" src="docs/img/lecture-verset-par-verset.png" />
+  <img width="380" alt="Le tableau du jour : « Ce que ton Professeur te propose », avec les leçons en cours et leur état" src="docs/img/tableau-du-jour.png" />
+  <img width="380" alt="Lecture verset par verset pendant l'écoute : calligraphie arabe KFGQPC, translittération et traduction française, verset actif mis en avant" src="docs/img/lecture-verset-par-verset.png" />
 </p>
 
 ## Comment ça marche
 
-<img align="right" width="270" alt="Début d'une leçon : nom de la sourate, présentation de son contexte, puis chaque verset avec son audio" src="docs/img/lecon-contexte.png" />
+<img align="right" width="240" alt="Début d'une leçon : nom de la sourate, présentation de son contexte, puis chaque verset avec son audio" src="docs/img/lecon-contexte.png" />
 
 Chaque leçon est un **chunk** naturel du Coran : une sourate entière si elle est courte, sinon un rukūʿ (unité thématique de ~8–12 versets). Une leçon se vit en trois moments, à ton rythme — elle peut s'étaler sur plusieurs jours :
 
@@ -19,7 +19,7 @@ Chaque leçon est un **chunk** naturel du Coran : une sourate entière si elle e
 - **En autonomie** (`/practice`) — pratique libre : écoute, répétition, texte masqué progressivement.
 - **Réciter au Professeur** (`/recite`) — tu récites de mémoire en t'enregistrant au micro, tu te réécoutes, puis tu t'évalues verset par verset. Pas de reconnaissance vocale, et c'est un choix : dans la méthode traditionnelle aussi, l'élève récite et écoute son propre retour — c'est toi qui juges. Le verdict final fait avancer la leçon vers la maîtrise.
 
-<img align="right" width="270" alt="Le catalogue : tout le Coran en 556 leçons, avec recherche et parcours par juzʾ" src="docs/img/catalogue.png" />
+<img align="right" width="240" alt="Le catalogue : tout le Coran en 556 leçons, avec recherche et parcours par juzʾ" src="docs/img/catalogue.png" />
 
 À côté des leçons :
 
