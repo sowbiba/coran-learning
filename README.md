@@ -4,23 +4,22 @@ Application web (PWA) pour mémoriser et comprendre le Coran, en français — d
 
 👉 **[coran-learning.vercel.app](https://coran-learning.vercel.app)**
 
-<img width="240" alt="Capture 1" src="https://github.com/user-attachments/assets/217f67fa-f3f0-435d-9c0c-b625b2d9813a" />
-
-<img width="240" alt="Capture 2" src="https://github.com/user-attachments/assets/288a86c6-a5e1-4bfe-b55a-68970ff0ab4a" />
-
-<img width="240" alt="Capture 3" src="https://github.com/user-attachments/assets/d98934b8-1ab0-4822-8d16-2503bb15e4c9" />
-
-<img width="240" alt="Capture 4" src="https://github.com/user-attachments/assets/80b5be05-8efe-4ea5-a3b2-4a2c31e78aa7" />
-
-
+<p align="center">
+  <img width="49%" alt="Le tableau du jour : « Ce que ton Professeur te propose », avec les leçons en cours et leur état" src="docs/img/tableau-du-jour.png" />
+  <img width="49%" alt="Lecture verset par verset pendant l'écoute : calligraphie arabe KFGQPC, translittération et traduction française, verset actif mis en avant" src="docs/img/lecture-verset-par-verset.png" />
+</p>
 
 ## Comment ça marche
+
+<img align="right" width="270" alt="Début d'une leçon : nom de la sourate, présentation de son contexte, puis chaque verset avec son audio" src="docs/img/lecon-contexte.png" />
 
 Chaque leçon est un **chunk** naturel du Coran : une sourate entière si elle est courte, sinon un rukūʿ (unité thématique de ~8–12 versets). Une leçon se vit en trois moments, à ton rythme — elle peut s'étaler sur plusieurs jours :
 
 - **Avec le Professeur** (`/lesson`) — introduction guidée : lecture mot à mot, sens, traduction (Hamidullah), translittération, audio verset par verset.
 - **En autonomie** (`/practice`) — pratique libre : écoute, répétition, texte masqué progressivement.
-- **Réciter au Professeur** (`/recite`) — tu récites de mémoire en t'enregistrant au micro, tu te réécoutes, puis tu t'évalues verset par verset. Pas de reconnaissance vocale : c'est toi qui juges, comme devant un professeur qui te laisse conclure. Le verdict final fait avancer la leçon vers la maîtrise.
+- **Réciter au Professeur** (`/recite`) — tu récites de mémoire en t'enregistrant au micro, tu te réécoutes, puis tu t'évalues verset par verset. Pas de reconnaissance vocale, et c'est un choix : dans la méthode traditionnelle aussi, l'élève récite et écoute son propre retour — c'est toi qui juges. Le verdict final fait avancer la leçon vers la maîtrise.
+
+<img align="right" width="270" alt="Le catalogue : tout le Coran en 556 leçons, avec recherche et parcours par juzʾ" src="docs/img/catalogue.png" />
 
 À côté des leçons :
 
