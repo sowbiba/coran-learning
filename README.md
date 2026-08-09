@@ -4,6 +4,13 @@ Application web (PWA) pour mémoriser et comprendre le Coran, en français — d
 
 👉 **[coran-learning.vercel.app](https://coran-learning.vercel.app)**
 
+<img width="330" alt="Capture 1" src="https://github.com/user-attachments/assets/217f67fa-f3f0-435d-9c0c-b625b2d9813a" />
+
+<img width="330" alt="Capture 2" src="https://github.com/user-attachments/assets/288a86c6-a5e1-4bfe-b55a-68970ff0ab4a" />
+
+<img width="330" alt="Capture 3" src="https://github.com/user-attachments/assets/d98934b8-1ab0-4822-8d16-2503bb15e4c9" />
+
+
 ## Comment ça marche
 
 Chaque leçon est un **chunk** naturel du Coran : une sourate entière si elle est courte, sinon un rukūʿ (unité thématique de ~8–12 versets). Une leçon se vit en trois moments, à ton rythme — elle peut s'étaler sur plusieurs jours :
